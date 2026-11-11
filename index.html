@@ -275,7 +275,27 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
 
     <div class="light stack" id="soundPanel">
       <div class="row">
-        <label class="label" for="presetSel">Sound setup</label>
+        <label class="label" for="profSel">Listening profile</label>
+        <select id="profSel"></select>
+        <span class="note" id="profState"></span>
+      </div>
+      <details id="profDetails">
+        <summary>Save and manage profiles</summary>
+        <div class="stack">
+          <div class="row">
+            <label class="sr" for="profName">Profile name</label><input type="text" id="profName" maxlength="40" placeholder="Name, e.g. HD 6XX at the desk">
+            <button class="btn small" id="profSave" type="button">Save as new</button>
+          </div>
+          <div class="row">
+            <button class="btn small" id="profUpdate" type="button">Update selected</button>
+            <button class="btn small" id="profRename" type="button">Rename selected</button>
+            <button class="btn small" id="profDelete" type="button">Delete selected</button>
+          </div>
+          <p class="note" id="profMsg" role="status">A profile stores the headphone setup, your filter edits, EQ on or off and the preamp choice. It never changes the volume slider. A different EQ and preamp can still sound louder or quieter at the same slider position.</p>
+        </div>
+      </details>
+      <div class="row">
+        <label class="label" for="presetSel">Headphones</label>
         <select id="presetSel"></select>
         <label class="checkwrap"><input type="checkbox" id="eqOn" checked> EQ on</label>
         <button class="btn small" id="revertBtn" type="button" hidden>Revert to preset</button>
@@ -402,6 +422,7 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
       </form>
       <p class="note" id="searchStatus" role="status">Filled-in filters apply together. Results come from the public Radio Browser directory.</p>
       <ol id="stationList"></ol>
+      <div class="row"><button class="btn small" id="rMore" type="button" hidden>Show more stations</button></div>
       <details>
         <summary>Add a stream address yourself</summary>
         <div class="stack">
@@ -1271,6 +1292,7 @@ async function showCover(id, token) {
   if (token !== loadToken) return;
   if (coverUrl) { URL.revokeObjectURL(coverUrl); coverUrl = null; }
   if (blob) { coverUrl = URL.createObjectURL(blob); img.src = coverUrl; img.hidden = false; } else { img.hidden = true; img.removeAttribute('src'); }
+  updateMediaSession();
 }
 async function loadTrack(i, autoplay) {
   const q = state.queue[i]; if (!q) return;
@@ -1569,8 +1591,8 @@ function showTab(t) {
 
 /* ---------- radio ---------- */
 const RAD = window.RikuRadio, FAV_KEY = 'riku.radio.v1';
-const COUNTRIES = [['', 'Any country'], ['FI', 'Finland'], ['DE', 'Germany'], ['LU', 'Luxembourg'], ['GR', 'Greece'], ['FR', 'France'], ['GB', 'United Kingdom'], ['US', 'United States'], ['SE', 'Sweden'], ['NO', 'Norway'], ['DK', 'Denmark'], ['EE', 'Estonia'], ['BE', 'Belgium'], ['NL', 'Netherlands'], ['AT', 'Austria'], ['CH', 'Switzerland'], ['IT', 'Italy'], ['ES', 'Spain'], ['PT', 'Portugal'], ['IE', 'Ireland'], ['PL', 'Poland'], ['CA', 'Canada'], ['AU', 'Australia'], ['JP', 'Japan']];
-const rui = { favs: [], results: [], searchToken: 0, good: null, blocked: false, abort: null };
+const COUNTRIES = [['', 'Any country'], ['FI', 'Finland'], ['DE', 'Germany'], ['LU', 'Luxembourg'], ['IT', 'Italy'], ['GR', 'Greece'], ['FR', 'France'], ['GB', 'United Kingdom'], ['US', 'United States'], ['AU', 'Australia'], ['AT', 'Austria'], ['BE', 'Belgium'], ['CA', 'Canada'], ['DK', 'Denmark'], ['EE', 'Estonia'], ['IE', 'Ireland'], ['JP', 'Japan'], ['NL', 'Netherlands'], ['NO', 'Norway'], ['PL', 'Poland'], ['PT', 'Portugal'], ['ES', 'Spain'], ['SE', 'Sweden'], ['CH', 'Switzerland']];
+const rui = { favs: [], results: [], searchToken: 0, target: 50, good: null, blocked: false, abort: null };
 const canHls = !!el.canPlayType('application/vnd.apple.mpegurl');
 document.addEventListener('securitypolicyviolation', (e) => { if (/connect-src|media-src|default-src/.test(e.effectiveDirective || e.violatedDirective || '')) rui.blocked = true; });
 const BLOCKED_TEXT = 'This copy of the player is hosted on a page that blocks outside connections, so the radio directory and stations cannot be reached from here. Open the standalone player file instead.';
@@ -1608,11 +1630,13 @@ async function radioSearch() {
   const api = (p) => radioApi(p, ac.signal, (h, n) => { if (token === rui.searchToken) status.textContent = 'Searching the directory' + (n > 1 ? ' (server ' + n + ': ' + h.split('.')[0] + ')' : '') + '…'; });
   status.textContent = 'Searching the directory…'; rui.results = []; renderStations();
   try {
-    const r = await RAD.search(api, f, { canHls: canHls, anyBitrate: any });
+    const r = await RAD.search(api, f, { canHls: canHls, anyBitrate: any, target: rui.target, maxPages: Math.ceil(rui.target / 100) + 4 });
+    $('rMore').hidden = true;
     if (token !== rui.searchToken) return;
     rui.results = r.stations; const n = r.stations.length;
     if (n) {
-      status.textContent = n + (n === 1 ? ' station' : ' stations') + (any ? ', including ones below 128 kbps or with no bitrate reported.' : ' with a reported bitrate of 128 kbps or more.') + (n >= 50 ? ' Showing the 50 most popular; narrow the filters to see others.' : !r.exhausted ? ' Only the first ' + r.pages * 100 + ' directory entries were checked.' : '') + (f.country ? '' : ' No country chosen, so this is a selection by popularity, not a complete catalogue.');
+      $('rMore').hidden = !(n >= rui.target && !r.exhausted);
+      status.textContent = n + (n === 1 ? ' station' : ' stations') + (any ? ', including ones below 128 kbps or with no bitrate reported.' : ' with a reported bitrate of 128 kbps or more.') + (n >= rui.target && !r.exhausted ? ' These are the ' + n + ' most popular; use “Show more stations” below the list for the rest.' : !r.exhausted ? ' Only the first ' + r.pages * 100 + ' directory entries were checked.' : '') + (f.country ? '' : ' No country chosen, so this is a selection by popularity, not a complete catalogue.');
     } else {
       status.textContent = 'Nothing to show yet. Checking why…';
       let c = null; try { c = await RAD.diagnose(api, f, { canHls: canHls }); } catch (e) {}
@@ -1687,7 +1711,8 @@ function initRadio() {
     onChange: (s) => { renderTransport(); renderRadioStatus(); if (s.state !== lastState) { lastState = s.state; if (s.state === 'failed' || s.state === 'recovering' || (s.state === 'playing' && s.direct)) announce(s.msg); if (ui.tab === 'radio') renderRadio(); } },
   });
   $('tabRadio').addEventListener('click', () => showTab('radio'));
-  $('rForm').addEventListener('submit', (e) => { e.preventDefault(); radioSearch(); });
+  $('rForm').addEventListener('submit', (e) => { e.preventDefault(); rui.target = 50; radioSearch(); });
+  $('rMore').addEventListener('click', () => { rui.target += 100; radioSearch(); });
   $('rReset').addEventListener('click', () => { $('rName').value = $('rTag').value = $('rLang').value = ''; $('rCountry').value = ''; $('rAny').checked = false; $('searchStatus').textContent = 'Filters cleared.'; });
   $('radioRetry').addEventListener('click', () => { if (radio.original) startRadio(radio.original); });
   $('radioRetryEq').addEventListener('click', () => { if (radio.original) { state.mode = 'radio'; ensureCtx(); radio.retryWithEq(); renderAll(); } });
@@ -1843,7 +1868,7 @@ function renderTransport() {
   $('repBtn').textContent = rl; $('repBtn').setAttribute('aria-label', rl.replace(' ', ': ')); $('repBtn').setAttribute('aria-pressed', String(state.repeat !== 'off'));
   $('muteBtn').setAttribute('aria-pressed', String(state.muted));
   $('vol').value = String(Math.round(state.volume * 100)); $('volPct').textContent = Math.round(state.volume * 100) + '%';
-  renderTime(); renderStatus();
+  renderTime(); renderStatus(); updateMediaSession();
 }
 function renderStatus() {
   const r = routing(), chip = $('routeChip'), txt = $('routeText');
@@ -1932,7 +1957,7 @@ function renderEq() {
   else hn.textContent = peakTxt + 'Auto leaves ' + MARGIN_DB + ' dB of margin below the combined peak and never boosts. The preamp is applied once; a preamp line in an imported file is kept as information and used only if you choose it.';
   hn.style.color = q.enabled && h.resultDb > 0.005 ? 'var(--warn)' : '';
   $('graphNote').textContent = 'Solid: filters. Dashed: filters plus preamp. ' + (E.ctx ? 'Calculated for the active ' + rate + ' Hz output.' : 'Preview at ' + rate + ' Hz; recalculated for the real output rate when playback starts.') + (E.lastMeasure ? ' Dots: live measurement.' : '');
-  drawGraph(); renderStatus();
+  drawGraph(); renderStatus(); profStateUpdate();
 }
 
 function sizeCanvas(cv) { const dpr = window.devicePixelRatio || 1, w = cv.clientWidth, h = cv.clientHeight; if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(h * dpr)) { cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); } const g = cv.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0); return { g: g, w: w, h: h }; }
@@ -2058,6 +2083,97 @@ $('edCancel').addEventListener('click', closeEdit);
 
 $('eqJump').addEventListener('click', () => { const d = $('eqDetails'); d.open = true; d.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' }); drawGraph(); saveSettings(); });
 
+/* ---------- lock screen and headset controls (Media Session) ---------- */
+let msKey = null;
+function updateMediaSession() {
+  const ms = navigator.mediaSession; if (!ms || !window.MediaMetadata) return;
+  const isRadio = state.mode === 'radio' && !!radio.station, q = current(), m = q && meta(q.trackId);
+  const key = isRadio ? 'r:' + radio.station.url : m ? 't:' + m.id + ':' + label(m) + ':' + (m.artist || '') + ':' + (m.album || '') + ':' + (coverUrl || '') : '';
+  if (key !== msKey) {
+    msKey = key;
+    try { ms.metadata = !key ? null : new MediaMetadata(isRadio ? { title: radio.station.name, artist: 'Internet radio', album: 'RIKU' } : { title: label(m), artist: m.artist || '', album: m.album || '', artwork: coverUrl ? [{ src: coverUrl }] : [] }); } catch (e) {}
+    const set = (a, f) => { try { ms.setActionHandler(a, f); } catch (e) {} };
+    set('previoustrack', isRadio ? null : () => prev());
+    set('nexttrack', isRadio ? null : () => next(false));
+    set('seekto', isRadio ? null : (d) => { if (Number.isFinite(d.seekTime) && Number.isFinite(el.duration)) el.currentTime = Math.max(0, Math.min(el.duration, d.seekTime)); });
+    set('seekbackward', isRadio ? null : (d) => { el.currentTime = Math.max(0, el.currentTime - (d.seekOffset || 10)); });
+    set('seekforward', isRadio ? null : (d) => { if (Number.isFinite(el.duration)) el.currentTime = Math.min(el.duration, el.currentTime + (d.seekOffset || 10)); });
+  }
+  const playing = isRadio ? radio.active() : state.intent === 'play' && !el.paused;
+  try { ms.playbackState = !key ? 'none' : playing ? 'playing' : 'paused'; } catch (e) {}
+  if (!isRadio && m && Number.isFinite(el.duration) && el.duration > 0 && ms.setPositionState) { try { ms.setPositionState({ duration: el.duration, playbackRate: 1, position: Math.min(el.currentTime || 0, el.duration) }); } catch (e) {} }
+}
+function initMediaSession() {
+  const ms = navigator.mediaSession; if (!ms) return;
+  const set = (a, f) => { try { ms.setActionHandler(a, f); } catch (e) {} };
+  set('play', () => play());
+  set('pause', () => { if (state.mode === 'radio' && radio.station) { radio.pause(); renderAll(); } else pause(); });
+  set('stop', () => stop());
+}
+
+/* ---------- listening profiles ---------- */
+const PROF_KEY = 'riku.profiles.v1', PROF_MAX = 30;
+const prof = { items: [], selected: '' };
+function eqSnapshot() { const q = state.eq; return { presetId: q.presetId, name: q.name, source: q.source, baseText: q.baseText, text: q.filters.length ? presetText() : '', enabled: q.enabled, preampMode: q.preampMode, manualPreamp: q.preampMode === 'manual' ? q.manualPreamp : 0 }; }
+function applyEqSnapshot(q) {          // validates fully before touching the current setup
+  let parsed = null;
+  if (q.text) { const r = D.parseAutoEq(q.text); if (!r.ok) return false; parsed = r.preset; }
+  const id = BUILTIN[q.presetId] ? q.presetId : (parsed ? 'custom' : 'flat');
+  setPreset(id, parsed, String(q.name || (BUILTIN[id] ? BUILTIN[id].name : 'Imported')), String(q.source || ''), typeof q.baseText === 'string' ? q.baseText : null);
+  state.eq.enabled = q.enabled !== false;
+  const manual = q.preampMode === 'manual' && Number.isFinite(q.manualPreamp) && Math.abs(q.manualPreamp) <= 60;
+  state.eq.preampMode = manual ? 'manual' : 'auto'; state.eq.manualPreamp = manual ? q.manualPreamp : 0;
+  return true;
+}
+function loadProfiles() {
+  try {
+    const s = JSON.parse(localStorage.getItem(PROF_KEY) || 'null');
+    if (s && s.v === 1 && Array.isArray(s.items)) {
+      prof.items = s.items.filter((x) => x && typeof x.id === 'string' && typeof x.name === 'string' && x.eq && typeof x.eq === 'object').slice(0, PROF_MAX).map((x) => ({ id: x.id, name: x.name.slice(0, 40), eq: x.eq }));
+      prof.selected = prof.items.some((x) => x.id === s.selected) ? s.selected : '';
+    }
+  } catch (e) {}
+}
+function saveProfiles() { try { localStorage.setItem(PROF_KEY, JSON.stringify({ v: 1, selected: prof.selected, items: prof.items })); return true; } catch (e) { $('profMsg').textContent = 'Profiles could not be saved in this browser; they last until the page is closed.'; return false; } }
+function selectedProfile() { return prof.items.find((x) => x.id === prof.selected) || null; }
+function profStateUpdate() {
+  const p = selectedProfile(), el2 = $('profState'); if (!el2) return;
+  el2.textContent = !p ? '' : JSON.stringify(eqSnapshot()) === JSON.stringify(p.eq) ? 'Saved' : 'Changed since saved';
+  for (const id of ['profUpdate', 'profRename', 'profDelete']) $(id).disabled = !p;
+}
+function renderProfiles() {
+  const sel = $('profSel'); sel.textContent = '';
+  const o0 = document.createElement('option'); o0.value = ''; o0.textContent = prof.items.length ? 'Current settings · no profile' : 'No profiles saved yet'; sel.append(o0);
+  for (const x of prof.items) { const o = document.createElement('option'); o.value = x.id; o.textContent = x.name; sel.append(o); }
+  sel.value = prof.selected; profStateUpdate();
+}
+function profSay(t) { $('profMsg').textContent = t; announce(t); }
+function initProfiles() {
+  loadProfiles();
+  $('profSel').addEventListener('change', (e) => {
+    const p = prof.items.find((x) => x.id === e.target.value);
+    if (!p) { prof.selected = ''; saveProfiles(); renderProfiles(); return; }
+    if (!applyEqSnapshot(p.eq)) { profSay('“' + p.name + '” could not be loaded because its stored filters are no longer valid. Your current setup is unchanged.'); renderProfiles(); return; }
+    prof.selected = p.id; saveProfiles(); renderPresetSel(); renderFilters(); eqChanged(); renderProfiles(); profSay('Loaded “' + p.name + '”. Volume unchanged.');
+  });
+  const nameOk = (exceptId) => {
+    const n = $('profName').value.trim().slice(0, 40);
+    if (!n) { profSay('Type a name for the profile first.'); return null; }
+    if (prof.items.some((x) => x.id !== exceptId && x.name.toLowerCase() === n.toLowerCase())) { profSay('A profile called “' + n + '” already exists. Select it and use Update, or choose another name.'); return null; }
+    return n;
+  };
+  $('profSave').addEventListener('click', () => {
+    if (prof.items.length >= PROF_MAX) return profSay('The limit is ' + PROF_MAX + ' profiles. Delete one first.');
+    const n = nameOk(null); if (!n) return;
+    const p = { id: newId(), name: n, eq: eqSnapshot() }; prof.items.push(p); prof.selected = p.id;
+    if (saveProfiles()) profSay('Saved “' + n + '”.'); $('profName').value = ''; renderProfiles();
+  });
+  $('profUpdate').addEventListener('click', () => { const p = selectedProfile(); if (!p) return; p.eq = eqSnapshot(); if (saveProfiles()) profSay('Updated “' + p.name + '” with the current settings.'); renderProfiles(); });
+  $('profRename').addEventListener('click', () => { const p = selectedProfile(); if (!p) return; const n = nameOk(p.id); if (!n) return; p.name = n; if (saveProfiles()) profSay('Renamed to “' + n + '”.'); $('profName').value = ''; renderProfiles(); });
+  twoStep($('profDelete'), 'Delete this profile?', () => { const p = selectedProfile(); if (!p) return; prof.items = prof.items.filter((x) => x !== p); prof.selected = ''; saveProfiles(); renderProfiles(); profSay('Deleted “' + p.name + '”. The current sound settings stay as they are.'); });
+  renderProfiles();
+}
+
 async function startLibrary() {
   try {
     await L.open(); libReady = true;
@@ -2078,9 +2194,10 @@ loadSettings();
 renderPresetSel(); renderFilters(); renderEq(); renderAll(); renderPlaylists();
 requestAnimationFrame(drawSpectrum);
 if (document.fonts && document.fonts.ready) document.fonts.ready.then(drawGraph);
+initMediaSession(); initProfiles();
 initRadio();
 const ready = startLibrary();
-window.__riku = { get radio() { return radio; }, rui: rui, startRadio: startRadio, radioSearch: radioSearch, BUILTIN: BUILTIN, ready: ready, lib: lib, ui: ui, L: L, importFiles: importFiles, isImporting: () => importing, libReady: () => libReady, state: state, E: E, el: el, D: D, play: play, stop: stop, next: next, loadDemo: loadDemo, measureLive: measureLive, selfTest: selfTest, rebuildEq: rebuildEq, routing: routing, headroom: headroom, loadBuiltin: (id) => { loadBuiltin(id); renderPresetSel(); renderFilters(); eqChanged(); }, applyImport: applyImport };
+window.__riku = { prof: prof, eqSnapshot: eqSnapshot, get radio() { return radio; }, rui: rui, startRadio: startRadio, radioSearch: radioSearch, BUILTIN: BUILTIN, ready: ready, lib: lib, ui: ui, L: L, importFiles: importFiles, isImporting: () => importing, libReady: () => libReady, state: state, E: E, el: el, D: D, play: play, stop: stop, next: next, loadDemo: loadDemo, measureLive: measureLive, selfTest: selfTest, rebuildEq: rebuildEq, routing: routing, headroom: headroom, loadBuiltin: (id) => { loadBuiltin(id); renderPresetSel(); renderFilters(); eqChanged(); }, applyImport: applyImport };
 })();
 </script>
 </body>
