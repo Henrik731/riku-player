@@ -212,6 +212,60 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
 .queue li { box-shadow: inset 0 1px 0 rgba(255,255,255,.07), 0 2px 4px rgba(0,0,0,.3); }
 .queue li.current { box-shadow: 0 0 0 1px var(--glow), 0 0 16px rgba(134,216,255,.28), inset 0 1px 0 rgba(255,255,255,.1); }
 .queue li.group { box-shadow: none; }
+
+/* ---------- theme v4: tone faders, lamps, compact view, finishes ---------- */
+.menurow { flex-wrap: wrap; }
+.linkbtn[aria-pressed="true"] { background: rgba(255,255,255,.6); box-shadow: inset 0 1px 3px rgba(40,55,80,.3); }
+.swatches { display: inline-flex; align-items: center; }
+.swatch { width: 34px; height: 44px; border: 0; background: none; padding: 0; cursor: pointer; position: relative; }
+.swatch::before { content: ""; position: absolute; left: 7px; top: 12px; width: 20px; height: 20px; border-radius: 50%; border: 1px solid #5d6878; box-shadow: inset 0 2px 2px rgba(255,255,255,.7), inset 0 -3px 4px rgba(0,0,0,.25), 0 1px 2px rgba(0,0,0,.35); }
+.swatch[data-finish="silver"]::before { background: linear-gradient(180deg, #f2f5f8, #aab5c3); }
+.swatch[data-finish="graphite"]::before { background: linear-gradient(180deg, #6a727e, #2c3138); }
+.swatch[data-finish="champagne"]::before { background: linear-gradient(180deg, #f6eedd, #c8b791); }
+.swatch[aria-pressed="true"]::before { outline: 2px solid #1f6fff; outline-offset: 2px; }
+.lamps { display: flex; gap: 18px; justify-content: flex-end; align-items: center; margin-top: -4px; margin-bottom: -4px; padding-right: 4px; flex-wrap: wrap; }
+.lamp { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; letter-spacing: .2em; text-transform: uppercase; color: #5d6a7d; text-shadow: 0 1px 0 rgba(255,255,255,.7); }
+.lamp i { width: 10px; height: 10px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #7d8794, #353c48); box-shadow: inset 0 1px 2px rgba(0,0,0,.6), 0 1px 0 rgba(255,255,255,.8), 0 0 0 1px rgba(60,70,90,.5); }
+.lamp.green i { background: radial-gradient(circle at 35% 30%, #e2ffee, #31d67c 55%, #0d7a3e); box-shadow: 0 0 9px rgba(49,214,124,.85), 0 0 0 1px rgba(13,90,50,.7); }
+.lamp.amber i { background: radial-gradient(circle at 35% 30%, #fff3d6, #ffb02e 55%, #a05a00); box-shadow: 0 0 9px rgba(255,176,46,.85), 0 0 0 1px rgba(120,70,0,.7); }
+.lamp.red i { background: radial-gradient(circle at 35% 30%, #ffe1dc, #ff4b3a 55%, #8f140a); box-shadow: 0 0 9px rgba(255,75,58,.85), 0 0 0 1px rgba(110,20,10,.7); }
+.lamp.blue i { background: radial-gradient(circle at 35% 30%, #e6f4ff, #4aa8ff 55%, #1456a8); box-shadow: 0 0 9px rgba(74,168,255,.85), 0 0 0 1px rgba(20,70,140,.7); }
+.tone { display: grid; gap: 6px; border-top: 1px solid var(--line); padding-top: 10px; }
+.faders { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; background: linear-gradient(180deg, #c3ccd8, #d3dbe5); border: 1px solid #98a4b4; border-radius: 10px; padding: 10px 6px 8px; box-shadow: inset 0 3px 6px rgba(40,55,80,.3), 0 1px 0 rgba(255,255,255,.9); }
+.fader { display: grid; justify-items: center; gap: 2px; min-width: 0; }
+.fval { font: 13px var(--font-lcd); color: #dff1ff; background: #0c1f47; border-radius: 4px; padding: 3px 5px; min-width: 5ch; text-align: center; box-shadow: inset 0 1px 3px rgba(0,0,0,.7), 0 1px 0 rgba(255,255,255,.8); }
+.slot { position: relative; width: 44px; height: 150px; background: linear-gradient(90deg, transparent 0 10px, rgba(60,75,100,.45) 10px 11px, transparent 11px 33px, rgba(60,75,100,.45) 33px 34px, transparent 34px) , repeating-linear-gradient(180deg, transparent 0 11px, rgba(60,75,100,.0) 11px 12px); }
+.slot::before { content: ""; position: absolute; left: 6px; right: 6px; top: 50%; height: 1px; background: rgba(40,55,80,.7); }
+.slot::after { content: ""; position: absolute; left: 12px; right: 12px; top: 12px; bottom: 12px; background: repeating-linear-gradient(180deg, rgba(40,55,80,.35) 0 1px, transparent 1px 10.5px); pointer-events: none; opacity: .6; }
+.slot input[type=range] { position: absolute; left: 50%; top: 50%; width: 150px; height: 44px; transform: translate(-50%, -50%) rotate(-90deg); touch-action: none; z-index: 1; }
+.slot input[type=range]::-webkit-slider-runnable-track { height: 6px; background: linear-gradient(180deg, #2b3548, #55627a); }
+.slot input[type=range]::-moz-range-track { height: 6px; background: linear-gradient(180deg, #2b3548, #55627a); }
+.slot input[type=range]::-webkit-slider-thumb { width: 18px; height: 34px; margin-top: -14px; border-radius: 4px; border: 1px solid #5d6878; background: linear-gradient(90deg, #fbfcfd 0%, #cfd6e0 40%, #3d4a60 48%, #3d4a60 52%, #cfd6e0 60%, #eef1f5 100%); box-shadow: -3px 0 5px rgba(0,0,0,.35), inset 0 1px 0 #fff; }
+.slot input[type=range]::-moz-range-thumb { width: 18px; height: 34px; border-radius: 4px; border: 1px solid #5d6878; background: linear-gradient(90deg, #fbfcfd 0%, #cfd6e0 40%, #3d4a60 48%, #3d4a60 52%, #cfd6e0 60%, #eef1f5 100%); box-shadow: -3px 0 5px rgba(0,0,0,.35); }
+.fname { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--text); overflow-wrap: anywhere; text-align: center; }
+.ffreq { font-size: 11px; color: var(--muted); }
+body.compact .pagehead, body.compact #soundPanel, body.compact #eqDetails, body.compact #sidePanel, body.compact #eqJump { display: none; }
+body.compact .app { grid-template-columns: minmax(0, 470px); justify-content: center; }
+/* finishes: silver is the default */
+body[data-finish="graphite"] .chassis { border-color: #1b1f25; background: repeating-linear-gradient(90deg, rgba(255,255,255,.03) 0 1px, rgba(0,0,0,.03) 1px 3px), linear-gradient(180deg, #606874 0%, #474e59 32%, #353a42 78%, #2a2e35 100%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.38), inset 0 -3px 6px rgba(0,0,0,.45), inset 2px 0 3px rgba(255,255,255,.12), 0 2px 0 #22262c, 0 5px 0 #14171b, 0 32px 60px rgba(0,0,0,.65); }
+body[data-finish="graphite"] .titlebar { background: linear-gradient(180deg, rgba(255,255,255,.2) 0%, rgba(255,255,255,.05) 47%, rgba(0,0,0,.12) 53%, rgba(0,0,0,.3) 100%), linear-gradient(180deg, #2b3446, #10141d); }
+body[data-finish="graphite"] .linkbtn { color: #e8edf4; }
+body[data-finish="graphite"] .linkbtn:hover, body[data-finish="graphite"] .linkbtn[aria-pressed="true"] { background: rgba(255,255,255,.14); }
+body[data-finish="graphite"] .lamp, body[data-finish="graphite"] .engrave { color: #b4bdca; text-shadow: 0 -1px 0 rgba(0,0,0,.6); }
+body[data-finish="graphite"] .volico { fill: #dbe1ea; } body[data-finish="graphite"] .volpct { color: #dbe1ea; }
+body[data-finish="graphite"] .chassis :focus-visible { outline-color: #8fc4ff; }
+body[data-finish="graphite"] .light { background: linear-gradient(180deg, #c6ccd5, #d3d8e0); border-color: #20242a; }
+body[data-finish="graphite"] .btn.round { box-shadow: 0 0 0 4px #4d5560, 0 0 0 5px #1b1f25, 0 7px 10px rgba(0,0,0,.55), inset 0 2px 1px #fff, inset 0 -5px 7px rgba(60,75,100,.32); }
+body[data-finish="champagne"] .chassis { border-color: #8f8064; background: repeating-linear-gradient(90deg, rgba(255,255,255,.05) 0 1px, rgba(90,60,0,.02) 1px 3px), linear-gradient(180deg, #f6efe1 0%, #e9dec9 32%, #d6c8ab 78%, #c4b492 100%);
+  box-shadow: inset 0 1px 0 #fff, inset 0 -3px 6px rgba(90,70,30,.3), inset 2px 0 3px rgba(255,255,255,.5), 0 2px 0 #a9997a, 0 5px 0 #7c6e53, 0 32px 60px rgba(0,0,0,.6); }
+body[data-finish="champagne"] .chassis .btn { border-color: #b0a184; background: linear-gradient(180deg, #fffdf8, #ece3d1); box-shadow: inset 0 1px 0 #fff, 0 2px 0 #a9997a, 0 4px 6px rgba(70,50,20,.28); }
+body[data-finish="champagne"] .chassis .btn:active, body[data-finish="champagne"] .chassis .btn[aria-pressed="true"] { background: linear-gradient(180deg, #d9cdb4, #e9dfcb); box-shadow: inset 0 2px 5px rgba(70,50,20,.35); }
+body[data-finish="champagne"] .chassis .btn.round { background: radial-gradient(circle at 35% 26%, #ffffff 0%, #f6f0e3 28%, #ddd0b6 68%, #c3b392 100%); border-color: #8f8064; box-shadow: 0 0 0 4px #e0d4bb, 0 0 0 5px #9a8b6e, 0 7px 10px rgba(70,50,20,.45), inset 0 2px 1px #fff, inset 0 -5px 7px rgba(110,85,40,.3); }
+body[data-finish="champagne"] .light { background: linear-gradient(180deg, #e6dcc8, #efe7d7); border-color: #b0a184; }
+body[data-finish="champagne"] .faders { background: linear-gradient(180deg, #d8ccb3, #e5dbc6); border-color: #b0a184; }
+body[data-finish="champagne"] .lamp, body[data-finish="champagne"] .engrave { color: #74664c; }
+body[data-finish="champagne"] .lcd { background: linear-gradient(180deg, #0e2452 0%, #0a1c45 55%, #0c2356 100%) padding-box, linear-gradient(180deg, #fffaf0, #b9a984 50%, #efe6d2) border-box; }
 </style>
 </head>
 <body>
@@ -241,6 +295,12 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
       <button class="linkbtn" id="openBtn" type="button" title="Shortcut: O">Open files…</button>
       <button class="linkbtn" id="demoBtn" type="button">Add demo</button>
       <span style="flex:1"></span>
+      <span class="swatches" role="group" aria-label="Finish">
+        <button class="swatch" type="button" data-finish="silver" aria-label="Silver finish" aria-pressed="true"></button>
+        <button class="swatch" type="button" data-finish="graphite" aria-label="Graphite finish" aria-pressed="false"></button>
+        <button class="swatch" type="button" data-finish="champagne" aria-label="Champagne finish" aria-pressed="false"></button>
+      </span>
+      <button class="linkbtn" id="compactBtn" type="button" aria-pressed="false">Compact</button>
       <button class="linkbtn" id="eqJump" type="button">Equaliser</button>
       <input class="sr" id="fileInput" type="file" accept="audio/*,.mp3,.m4a,.aac,.wav,.flac,.ogg,.opus,.aif,.aiff" multiple tabindex="-1" aria-label="Choose audio files">
     </div>
@@ -259,6 +319,12 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
       <input type="range" id="seek" min="0" max="1000" value="0" step="1" aria-label="Seek" disabled>
     </div>
 
+    <div class="lamps" aria-hidden="true">
+      <span class="lamp" id="lampEq"><i></i>EQ</span>
+      <span class="lamp" id="lampTone"><i></i>Tone</span>
+      <span class="lamp" id="lampRadio"><i></i>Radio</span>
+      <span class="lamp" id="lampPeak"><i></i>Peak</span>
+    </div>
     <div class="row transport">
       <button class="btn round" id="prevBtn" type="button" aria-label="Previous track"><svg viewBox="0 0 24 24"><path d="M6 5h2v14H6zM20 5v14L9 12z"/></svg></button>
       <button class="btn round big" id="playBtn" type="button" aria-label="Play" title="Shortcut: Space"><svg viewBox="0 0 24 24"><path id="playIcon" d="M7 4v16l13-8z"/></svg></button>
@@ -299,6 +365,10 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
         <select id="presetSel"></select>
         <label class="checkwrap"><input type="checkbox" id="eqOn" checked> EQ on</label>
         <button class="btn small" id="revertBtn" type="button" hidden>Revert to preset</button>
+      </div>
+      <div class="tone" role="group" aria-labelledby="toneLabel">
+        <div class="row"><span class="label" id="toneLabel">Tone</span><span class="note" style="flex:1">Your taste, added on top of the headphone correction. Up to ±6 dB per band.</span><button class="btn small" id="toneFlat" type="button">Flat</button></div>
+        <div class="faders" id="faders"></div>
       </div>
       <p class="note" id="presetSource"></p>
       <p class="status-text" id="routeText" role="status"></p>
@@ -1101,7 +1171,7 @@ let uid = 1;
 const state = {
   queue: [], index: -1, intent: 'stop', loading: false, order: [],
   shuffle: false, repeat: 'off', volume: 0.8, muted: false, mode: 'local',
-  eq: { enabled: true, presetId: 'flat', name: '', source: '', baseText: '', filters: [], sourcePreamp: null, sourcePreampRaw: null, preampMode: 'auto', manualPreamp: 0 },
+  eq: { enabled: true, presetId: 'flat', name: '', source: '', baseText: '', filters: [], sourcePreamp: null, sourcePreampRaw: null, preampMode: 'auto', manualPreamp: 0, tone: [0, 0, 0, 0, 0] },
 };
 const E = { ctx: null, fatal: null, eqError: null, branches: [], retiring: 0, sig: 0, lastMeasure: null, measuring: false };
 const el = new Audio(); el.preload = 'auto';
@@ -1138,7 +1208,12 @@ function fmtDb(v, d) { return (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v).t
 function fs() { return E.ctx ? E.ctx.sampleRate : PREVIEW_FS; }
 function withIds(filters) { return filters.map((f) => Object.assign({ id: uid++ }, f)); }
 function presetText() { return D.exportAutoEq({ filters: state.eq.filters, sourcePreamp: state.eq.sourcePreamp, sourcePreampRaw: state.eq.sourcePreampRaw }); }
-function eqFilters() { return state.eq.enabled ? state.eq.filters : []; }
+/* Tone bands: a personal adjustment kept separate from the measured correction. They run in the same chain,
+   count towards the automatic preamp, appear in the response graph and are covered by the diagnostics. */
+const TONE = [{ label: 'Bass', type: 'LSC', fc: 100, q: 0.7 }, { label: 'Warmth', type: 'PK', fc: 300, q: 0.9 }, { label: 'Mid', type: 'PK', fc: 1000, q: 0.9 }, { label: 'Presence', type: 'PK', fc: 3500, q: 0.9 }, { label: 'Air', type: 'HSC', fc: 9000, q: 0.7 }];
+function toneFilters() { return TONE.map((b, i) => ({ num: 900 + i, enabled: true, type: b.type, fc: b.fc, gain: state.eq.tone[i] || 0, q: b.q })); }
+function setTone(a) { state.eq.tone = TONE.map((_, i) => { const v = Array.isArray(a) ? Number(a[i]) : 0; return Number.isFinite(v) && Math.abs(v) <= 6 ? Math.round(v * 2) / 2 : 0; }); }
+function eqFilters() { return state.eq.enabled ? state.eq.filters.concat(toneFilters()) : []; }
 function headroom() {
   const a = D.autoPreamp(eqFilters(), fs(), MARGIN_DB);
   const pre = !state.eq.enabled ? 0 : state.eq.preampMode === 'auto' ? a.preampDb : state.eq.manualPreamp;
@@ -1150,8 +1225,8 @@ function saveSettings() {
   try {
     const q = state.eq;
     localStorage.setItem(LS_KEY, JSON.stringify({ v: 1, volume: state.volume, muted: state.muted, shuffle: state.shuffle, repeat: state.repeat,
-      eq: { enabled: q.enabled, presetId: q.presetId, name: q.name, source: q.source, baseText: q.baseText, text: q.filters.length ? presetText() : '', sourcePreampRaw: q.sourcePreampRaw, preampMode: q.preampMode, manualPreamp: q.manualPreamp },
-      eqOpen: $('eqDetails').open }));
+      eq: { enabled: q.enabled, presetId: q.presetId, name: q.name, source: q.source, baseText: q.baseText, text: q.filters.length ? presetText() : '', sourcePreampRaw: q.sourcePreampRaw, preampMode: q.preampMode, manualPreamp: q.manualPreamp, tone: q.tone },
+      eqOpen: $('eqDetails').open, compact: document.body.classList.contains('compact'), finish: document.body.dataset.finish || 'silver' }));
   } catch (e) { /* storage unavailable: settings last for this visit only */ }
 }
 function setPreset(id, parsed, name, source, baseText) {
@@ -1178,9 +1253,11 @@ function loadSettings() {
       const r = D.parseAutoEq(q.text);
       if (r.ok) setPreset(BUILTIN[q.presetId] ? q.presetId : 'custom', r.preset, String(q.name || 'Imported'), String(q.source || ''), typeof q.baseText === 'string' ? q.baseText : null);
     }
-    state.eq.enabled = q.enabled !== false;
+    state.eq.enabled = q.enabled !== false; setTone(q.tone);
     if (q.preampMode === 'manual' && Number.isFinite(q.manualPreamp) && Math.abs(q.manualPreamp) <= 60) { state.eq.preampMode = 'manual'; state.eq.manualPreamp = q.manualPreamp; }
     if (s.eqOpen) $('eqDetails').open = true;
+    if (s.compact) document.body.classList.add('compact');
+    if (['silver', 'graphite', 'champagne'].includes(s.finish)) document.body.dataset.finish = s.finish;
   } catch (e) { loadBuiltin('flat'); }
 }
 
@@ -1258,11 +1335,11 @@ function routing() {
   if (E.ctx.state !== 'running') return { code: 'suspended', cls: 'warn', chip: 'AUDIO ' + E.ctx.state.toUpperCase(), text: 'The audio engine is ' + E.ctx.state + ', so nothing is being processed. Press Play to resume.' };
   if (E.eqError) return { code: 'error', cls: 'bad', chip: 'EQ ERROR', text: 'The EQ could not be built: ' + E.eqError + '. Audio passes through unprocessed.' };
   if (!state.eq.enabled) return { code: 'off', cls: 'idle', chip: 'EQ OFF', text: 'EQ switched off. Audio passes through the engine with no filters and 0 dB preamp.' };
-  const n = D.activeFilters(state.eq.filters, fs()).length, h = headroom();
+  const nTone = D.activeFilters(toneFilters(), fs()).length, n = D.activeFilters(state.eq.filters, fs()).length + nTone, h = headroom();
   const skipped = D.filtersAboveNyquist(state.eq.filters, fs());
   const skipTxt = skipped.length ? ' Not running: filter ' + skipped.map((f) => f.num).join(', ') + ' (Fc is not below ' + fs() / 2 + ' Hz at this sample rate).' : '';
   if (!n) return { code: 'flat', cls: skipped.length ? 'warn' : 'idle', chip: 'EQ ON · FLAT', text: 'EQ is on with no active filters.' + skipTxt };
-  const base = n + (n === 1 ? ' filter' : ' filters') + ' and ' + fmtDb(h.preampDb) + ' dB preamp at ' + fs() + ' Hz.';
+  const base = (n - nTone) + (n - nTone === 1 ? ' correction filter' : ' correction filters') + (nTone ? ', ' + nTone + (nTone === 1 ? ' tone band' : ' tone bands') : '') + ' and ' + fmtDb(h.preampDb) + ' dB preamp at ' + fs() + ' Hz.';
   if (E.lastMeasure && E.lastMeasure.ok && E.lastMeasure.key === srcKey()) return { code: 'measured', cls: 'good', chip: 'EQ MEASURED', text: 'In the signal path: ' + base + ' Live measurement at ' + E.lastMeasure.time + ' matched the expected curve within ' + E.lastMeasure.maxDev.toFixed(1) + ' dB.' + skipTxt };
   return { code: 'configured', cls: skipped.length ? 'warn' : 'good', chip: 'EQ CONFIGURED', text: 'Built into the signal path: ' + base + ' Configured is not measured. Use Diagnostics to check on this device.' + skipTxt };
 }
@@ -1874,6 +1951,9 @@ function renderStatus() {
   const r = routing(), chip = $('routeChip'), txt = $('routeText');
   chip.textContent = r.chip; chip.className = 'chip ' + r.cls;
   $('radioRetryEq').hidden = !(state.mode === 'radio' && radio.direct && radio.station && radio.eqFailReason && radio.state !== 'stopped');
+  $('lampEq').className = 'lamp' + (r.code === 'configured' || r.code === 'measured' ? ' green' : r.code === 'error' ? ' red' : r.code === 'direct' || r.code === 'suspended' ? ' amber' : '');
+  $('lampTone').className = 'lamp' + (state.eq.enabled && state.eq.tone.some((v) => v) ? (r.code === 'direct' ? ' amber' : ' blue') : '');
+  $('lampRadio').className = 'lamp' + (state.mode !== 'radio' ? '' : radio.state === 'playing' ? ' green' : radio.state === 'failed' ? ' red' : radio.active() ? ' amber' : '');
   if (txt.textContent !== r.text) txt.textContent = r.text;
   txt.className = 'status-text' + (r.cls === 'warn' ? ' warn' : r.cls === 'bad' ? ' bad' : '');
 }
@@ -1940,6 +2020,7 @@ function renderFilters() {
   $('filterCount').textContent = state.eq.filters.length + ' of ' + D.LIMITS.maxFilters + ' filters';
 }
 function renderEq() {
+  renderTone();
   const q = state.eq, h = headroom(), rate = fs();
   $('eqOn').checked = q.enabled;
   const modified = (q.filters.length ? presetText() : '') !== q.baseText;
@@ -1991,7 +2072,7 @@ function drawSpectrum(ts) {
     E.ana.getByteFrequencyData(specBuf);
     if (E.ana.getFloatTimeDomainData) { E.ana.getFloatTimeDomainData(timeBuf); let pk = 0; for (let i = 0; i < timeBuf.length; i++) { const a = Math.abs(timeBuf[i]); if (a > pk) pk = a; } if (pk >= 1) clipUntil = ts + 2000; }
   }
-  $('clipChip').hidden = ts > clipUntil;
+  $('clipChip').hidden = ts > clipUntil; $('lampPeak').className = 'lamp' + (ts > clipUntil ? '' : ' red');
   const nyq = fs() / 2;
   for (let i = 0; i < bars; i++) {
     let v = 0;
@@ -2081,7 +2162,53 @@ twoStep($('plDelete'), 'Delete this playlist?', deletePlaylist);
 $('editForm').addEventListener('submit', (e) => { e.preventDefault(); saveEdit(); });
 $('edCancel').addEventListener('click', closeEdit);
 
-$('eqJump').addEventListener('click', () => { const d = $('eqDetails'); d.open = true; d.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' }); drawGraph(); saveSettings(); });
+$('eqJump').addEventListener('click', () => { setCompact(false); const d = $('eqDetails'); d.open = true; d.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' }); drawGraph(); saveSettings(); });
+
+/* ---------- tone faders, compact view, finishes ---------- */
+function renderTone() {
+  const box = $('faders'); if (!box) return;
+  if (!box.children.length) {
+    TONE.forEach((b, i) => {
+      const w = document.createElement('div'); w.className = 'fader';
+      const val = document.createElement('span'); val.className = 'fval'; val.id = 'toneVal' + i;
+      const slot = document.createElement('div'); slot.className = 'slot';
+      const inp = document.createElement('input'); inp.type = 'range'; inp.min = '-6'; inp.max = '6'; inp.step = '0.5'; inp.id = 'tone' + i;
+      inp.setAttribute('aria-label', b.label + ', around ' + (b.fc >= 1000 ? b.fc / 1000 + ' kilohertz' : b.fc + ' hertz')); inp.setAttribute('aria-orientation', 'vertical');
+      inp.addEventListener('input', () => { state.eq.tone[i] = Number(inp.value); eqChanged(); });
+      inp.addEventListener('dblclick', () => { state.eq.tone[i] = 0; eqChanged(); });
+      slot.append(inp);
+      const nm = document.createElement('span'); nm.className = 'fname'; nm.textContent = b.label;
+      const fq = document.createElement('span'); fq.className = 'ffreq'; fq.textContent = b.fc >= 1000 ? b.fc / 1000 + ' kHz' : b.fc + ' Hz';
+      w.append(val, slot, nm, fq); box.append(w);
+    });
+  }
+  TONE.forEach((b, i) => {
+    const v = state.eq.tone[i] || 0, inp = $('tone' + i);
+    if (Number(inp.value) !== v) inp.value = String(v);
+    inp.setAttribute('aria-valuetext', fmtDb(v) + ' dB'); inp.disabled = !state.eq.enabled;
+    $('toneVal' + i).textContent = fmtDb(v);
+  });
+  $('toneFlat').disabled = !state.eq.tone.some((v) => v);
+}
+function setCompact(on) {
+  document.body.classList.toggle('compact', on);
+  $('compactBtn').setAttribute('aria-pressed', String(on)); $('compactBtn').textContent = on ? 'Full view' : 'Compact';
+  saveSettings(); if (!on) drawGraph();
+}
+function setFinish(f) {
+  document.body.dataset.finish = f;
+  for (const b of document.querySelectorAll('.swatch')) b.setAttribute('aria-pressed', String(b.dataset.finish === f));
+  saveSettings();
+}
+function initLook() {
+  $('toneFlat').addEventListener('click', () => { setTone(null); eqChanged(); announce('Tone set flat.'); });
+  $('compactBtn').addEventListener('click', () => setCompact(!document.body.classList.contains('compact')));
+  for (const b of document.querySelectorAll('.swatch')) b.addEventListener('click', () => setFinish(b.dataset.finish));
+  const on = document.body.classList.contains('compact');
+  $('compactBtn').setAttribute('aria-pressed', String(on)); $('compactBtn').textContent = on ? 'Full view' : 'Compact';
+  const f = document.body.dataset.finish || 'silver';
+  for (const b of document.querySelectorAll('.swatch')) b.setAttribute('aria-pressed', String(b.dataset.finish === f));
+}
 
 /* ---------- lock screen and headset controls (Media Session) ---------- */
 let msKey = null;
@@ -2114,13 +2241,14 @@ function initMediaSession() {
 /* ---------- listening profiles ---------- */
 const PROF_KEY = 'riku.profiles.v1', PROF_MAX = 30;
 const prof = { items: [], selected: '' };
-function eqSnapshot() { const q = state.eq; return { presetId: q.presetId, name: q.name, source: q.source, baseText: q.baseText, text: q.filters.length ? presetText() : '', enabled: q.enabled, preampMode: q.preampMode, manualPreamp: q.preampMode === 'manual' ? q.manualPreamp : 0 }; }
+function eqSnapshot() { const q = state.eq; return { presetId: q.presetId, name: q.name, source: q.source, baseText: q.baseText, text: q.filters.length ? presetText() : '', enabled: q.enabled, preampMode: q.preampMode, manualPreamp: q.preampMode === 'manual' ? q.manualPreamp : 0, tone: q.tone.slice() }; }
+function snapKey(e) { return JSON.stringify([e.presetId, e.name, e.source, e.baseText, e.text, e.enabled !== false, e.preampMode === 'manual' ? 'manual' : 'auto', e.preampMode === 'manual' ? e.manualPreamp : 0, TONE.map((_, k) => (Array.isArray(e.tone) && Number(e.tone[k])) || 0)]); }
 function applyEqSnapshot(q) {          // validates fully before touching the current setup
   let parsed = null;
   if (q.text) { const r = D.parseAutoEq(q.text); if (!r.ok) return false; parsed = r.preset; }
   const id = BUILTIN[q.presetId] ? q.presetId : (parsed ? 'custom' : 'flat');
   setPreset(id, parsed, String(q.name || (BUILTIN[id] ? BUILTIN[id].name : 'Imported')), String(q.source || ''), typeof q.baseText === 'string' ? q.baseText : null);
-  state.eq.enabled = q.enabled !== false;
+  state.eq.enabled = q.enabled !== false; setTone(q.tone);
   const manual = q.preampMode === 'manual' && Number.isFinite(q.manualPreamp) && Math.abs(q.manualPreamp) <= 60;
   state.eq.preampMode = manual ? 'manual' : 'auto'; state.eq.manualPreamp = manual ? q.manualPreamp : 0;
   return true;
@@ -2138,7 +2266,7 @@ function saveProfiles() { try { localStorage.setItem(PROF_KEY, JSON.stringify({ 
 function selectedProfile() { return prof.items.find((x) => x.id === prof.selected) || null; }
 function profStateUpdate() {
   const p = selectedProfile(), el2 = $('profState'); if (!el2) return;
-  el2.textContent = !p ? '' : JSON.stringify(eqSnapshot()) === JSON.stringify(p.eq) ? 'Saved' : 'Changed since saved';
+  el2.textContent = !p ? '' : snapKey(eqSnapshot()) === snapKey(p.eq) ? 'Saved' : 'Changed since saved';
   for (const id of ['profUpdate', 'profRename', 'profDelete']) $(id).disabled = !p;
 }
 function renderProfiles() {
@@ -2194,10 +2322,10 @@ loadSettings();
 renderPresetSel(); renderFilters(); renderEq(); renderAll(); renderPlaylists();
 requestAnimationFrame(drawSpectrum);
 if (document.fonts && document.fonts.ready) document.fonts.ready.then(drawGraph);
-initMediaSession(); initProfiles();
+initLook(); initMediaSession(); initProfiles();
 initRadio();
 const ready = startLibrary();
-window.__riku = { prof: prof, eqSnapshot: eqSnapshot, get radio() { return radio; }, rui: rui, startRadio: startRadio, radioSearch: radioSearch, BUILTIN: BUILTIN, ready: ready, lib: lib, ui: ui, L: L, importFiles: importFiles, isImporting: () => importing, libReady: () => libReady, state: state, E: E, el: el, D: D, play: play, stop: stop, next: next, loadDemo: loadDemo, measureLive: measureLive, selfTest: selfTest, rebuildEq: rebuildEq, routing: routing, headroom: headroom, loadBuiltin: (id) => { loadBuiltin(id); renderPresetSel(); renderFilters(); eqChanged(); }, applyImport: applyImport };
+window.__riku = { TONE: TONE, setCompact: setCompact, setFinish: setFinish, prof: prof, eqSnapshot: eqSnapshot, get radio() { return radio; }, rui: rui, startRadio: startRadio, radioSearch: radioSearch, BUILTIN: BUILTIN, ready: ready, lib: lib, ui: ui, L: L, importFiles: importFiles, isImporting: () => importing, libReady: () => libReady, state: state, E: E, el: el, D: D, play: play, stop: stop, next: next, loadDemo: loadDemo, measureLive: measureLive, selfTest: selfTest, rebuildEq: rebuildEq, routing: routing, headroom: headroom, loadBuiltin: (id) => { loadBuiltin(id); renderPresetSel(); renderFilters(); eqChanged(); }, applyImport: applyImport };
 })();
 </script>
 </body>
