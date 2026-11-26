@@ -266,6 +266,49 @@ body[data-finish="champagne"] .light { background: linear-gradient(180deg, #e6dc
 body[data-finish="champagne"] .faders { background: linear-gradient(180deg, #d8ccb3, #e5dbc6); border-color: #b0a184; }
 body[data-finish="champagne"] .lamp, body[data-finish="champagne"] .engrave { color: #74664c; }
 body[data-finish="champagne"] .lcd { background: linear-gradient(180deg, #0e2452 0%, #0a1c45 55%, #0c2356 100%) padding-box, linear-gradient(180deg, #fffaf0, #b9a984 50%, #efe6d2) border-box; }
+
+/* ---------- car mode ---------- */
+body.car-open { overflow: hidden; }
+.car { position: fixed; inset: 0; z-index: 50; background: radial-gradient(900px 500px at 50% -10%, #12224a, #050a16 70%) #050a16; color: #eef4ff; display: flex; flex-direction: column; gap: 14px;
+  padding: max(14px, env(safe-area-inset-top)) max(14px, env(safe-area-inset-right)) max(14px, env(safe-area-inset-bottom)) max(14px, env(safe-area-inset-left)); font-family: var(--font-ui); }
+.car[hidden] { display: none; }
+.car button { font: 600 20px/1.15 var(--font-ui); color: #eef4ff; background: #12224a; border: 2px solid #2d4a85; border-radius: 16px; cursor: pointer; }
+.car button:active { background: #1d3670; }
+.car :focus-visible { outline: 4px solid #86d8ff; outline-offset: 3px; }
+.car-top { display: flex; gap: 12px; align-items: stretch; }
+.car-exit { min-height: 60px; padding: 0 14px; flex: 0 0 auto; }
+.car-top button { font-size: 18px; }
+.car-src { display: flex; flex: 1; gap: 8px; }
+.car-src button { flex: 1; min-height: 60px; }
+.car-src button[aria-pressed="true"] { background: #eef4ff; color: #071330; border-color: #eef4ff; }
+.car-main { display: grid; gap: 14px; }
+.car-now { text-align: center; padding: 6px 4px; }
+.car-state { font: 600 18px/1.3 var(--font-ui); color: #86d8ff; letter-spacing: .04em; min-height: 1.3em; }
+.car-title { font: 700 clamp(28px, 7.5vw, 46px)/1.1 var(--font-ui); overflow-wrap: anywhere; margin-top: 6px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.car-sub { font-size: 18px; color: #a8bbd9; margin-top: 6px; min-height: 1.3em; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.car-transport { display: grid; grid-template-columns: 1fr 1.3fr 1fr; gap: 12px; }
+.car-transport button { min-height: 104px; display: flex; align-items: center; justify-content: center; }
+.car-transport svg { width: 44px; height: 44px; fill: currentColor; }
+#carPlay { background: #eef4ff; color: #0b1d45; border-color: #eef4ff; }
+#carPlay svg { width: 56px; height: 56px; }
+.car-tiles { flex: 1; min-height: 0; overflow-y: auto; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: minmax(84px, auto); gap: 12px; align-content: start; overscroll-behavior: contain; }
+.car-tile { display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 4px; padding: 10px 16px; text-align: left; min-width: 0; }
+.car-tile-name { overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.car-tile-sub { font-size: 15px; font-weight: 500; color: #a8bbd9; }
+.car-tile[aria-pressed="true"] { border-color: #86d8ff; background: #173a73; box-shadow: 0 0 0 2px #86d8ff inset; }
+.car-empty { grid-column: 1 / -1; font-size: 20px; color: #a8bbd9; text-align: center; margin: 20px 0; }
+.car-note { margin: 0; font-size: 15px; color: #ffbe5c; text-align: center; }
+.car-note:empty { display: none; }
+@media (orientation: landscape) and (max-height: 560px) {
+  .car { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr) auto; }
+  .car-top { grid-column: 1 / -1; }
+  .car-main { grid-column: 1; grid-row: 2; align-content: center; }
+  .car-tiles { grid-column: 2; grid-row: 2; }
+  .car-note { grid-column: 1 / -1; }
+  .car-transport button { min-height: 84px; }
+  .car-title { font-size: clamp(24px, 4.5vw, 38px); }
+}
+@media (min-width: 900px) { .car-tiles { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 </style>
 </head>
 <body>
@@ -300,6 +343,7 @@ body[data-finish="champagne"] .lcd { background: linear-gradient(180deg, #0e2452
         <button class="swatch" type="button" data-finish="graphite" aria-label="Graphite finish" aria-pressed="false"></button>
         <button class="swatch" type="button" data-finish="champagne" aria-label="Champagne finish" aria-pressed="false"></button>
       </span>
+      <button class="linkbtn" id="carBtn" type="button">Car</button>
       <button class="linkbtn" id="compactBtn" type="button" aria-pressed="false">Compact</button>
       <button class="linkbtn" id="eqJump" type="button">Equaliser</button>
       <input class="sr" id="fileInput" type="file" accept="audio/*,.mp3,.m4a,.aac,.wav,.flac,.ogg,.opus,.aif,.aiff" multiple tabindex="-1" aria-label="Choose audio files">
@@ -527,6 +571,29 @@ body[data-finish="champagne"] .lcd { background: linear-gradient(180deg, #0e2452
     <div class="row"><button class="btn small" type="submit" id="edSave">Save</button><button class="btn small" type="button" id="edCancel">Cancel</button></div>
   </form>
 </dialog>
+<div id="car" class="car" hidden role="dialog" aria-modal="true" aria-labelledby="carTitle">
+  <div class="car-top">
+    <button class="car-exit" id="carExit" type="button">Exit car mode</button>
+    <div class="car-src" role="group" aria-label="Show">
+      <button type="button" id="carSrcRadio" aria-pressed="true">Radio</button>
+      <button type="button" id="carSrcMusic" aria-pressed="false">Music</button>
+    </div>
+  </div>
+  <div class="car-main">
+    <div class="car-now">
+      <div class="car-state" id="carState">Stopped</div>
+      <div class="car-title" id="carTitle">Choose a station</div>
+      <div class="car-sub" id="carSub"></div>
+    </div>
+    <div class="car-transport">
+      <button type="button" id="carPrev" aria-label="Previous station"><svg viewBox="0 0 24 24"><path d="M6 5h2v14H6zM20 5v14L9 12z"/></svg></button>
+      <button type="button" id="carPlay" aria-label="Play"><svg viewBox="0 0 24 24"><path id="carPlayIcon" d="M7 4v16l13-8z"/></svg></button>
+      <button type="button" id="carNext" aria-label="Next station"><svg viewBox="0 0 24 24"><path d="M16 5h2v14h-2zM4 5v14l11-7z"/></svg></button>
+    </div>
+  </div>
+  <div class="car-tiles" id="carTiles"></div>
+  <p class="car-note" id="carNote"></p>
+</div>
 <div class="sr" id="live" aria-live="polite"></div>
 
 <script>
@@ -1421,14 +1488,22 @@ function play() {
 function pause() { state.intent = 'pause'; el.pause(); renderAll(); }
 function stop() { if (state.mode === 'radio') { radio.stop(); renderAll(); return; } state.intent = 'stop'; el.pause(); try { el.currentTime = 0; } catch (e) {} renderAll(); }
 function toggle() { if (state.mode === 'radio' && radio.station) { if (radio.active()) radio.pause(); else startRadio(radio.original || radio.station); return; } if (state.intent === 'play' && !el.paused) pause(); else play(); }
+/* In radio mode, Next and Previous step through the favourites list, in its order, wrapping at the ends. */
+function radioStep(dir) {
+  const favs = rui.favs;
+  if (!favs.length) { playerMsg('Add favourite stations in the Radio tab to switch stations with Next and Previous.'); return; }
+  const cur = radio.original ? favs.findIndex((f) => f.url === radio.original.url) : -1;
+  const i = cur < 0 ? (dir > 0 ? 0 : favs.length - 1) : (cur + dir + favs.length) % favs.length;
+  startRadio(favs[i]); announce(favs[i].name);
+}
 function next(auto) {
-  if (state.mode === 'radio') { playerMsg('Next and Previous work on the music queue. Choose stations in the Radio tab.'); return; }
+  if (state.mode === 'radio') { radioStep(1); return; }
   const n = step(1, state.repeat === 'all');
   if (n < 0) { if (auto) stop(); else playerMsg('End of the queue.'); return; }
   loadTrack(n, state.intent === 'play' || auto);
 }
 function prev() {
-  if (state.mode === 'radio') { playerMsg('Next and Previous work on the music queue. Choose stations in the Radio tab.'); return; }
+  if (state.mode === 'radio') { radioStep(-1); return; }
   if (el.currentTime > 3) { el.currentTime = 0; return; }
   const n = step(-1, state.repeat === 'all');
   if (n < 0) { try { el.currentTime = 0; } catch (e) {} return; }
@@ -1736,22 +1811,31 @@ function toggleFav(st) {
   if (isFav(st)) rui.favs = rui.favs.filter((f) => f.url !== st.url); else rui.favs.push(Object.assign({}, st));
   saveFavs(); renderRadio();
 }
-function stationRow(st) {
+function moveFav(i, dir) {
+  const j = i + dir; if (j < 0 || j >= rui.favs.length) return;
+  const a = rui.favs; [a[i], a[j]] = [a[j], a[i]]; saveFavs(); renderRadio();
+  const b = document.querySelector('#favList button[data-move="' + (dir < 0 ? 'up' : 'down') + '"][data-i="' + j + '"]') || document.querySelector('#favList button[data-i="' + j + '"]');
+  if (b) b.focus();
+  announce(a[j].name + ' is now number ' + (j + 1) + ' of ' + a.length + '.');
+}
+function stationRow(st, favIndex) {
   const li = document.createElement('li'); if (radio.original && radio.original.url === st.url && state.mode === 'radio') li.className = 'current';
   const b = document.createElement('button'); b.type = 'button'; b.className = 'tname'; b.textContent = st.name; b.setAttribute('aria-label', 'Play station ' + st.name);
   const sm = document.createElement('small'); sm.textContent = stationMeta(st) + (st.source === 'custom' ? ' · added by you' : ''); b.append(sm);
   b.addEventListener('click', () => startRadio(st));
   const fav = document.createElement('button'); fav.type = 'button'; fav.className = 'iconbtn'; const on = isFav(st); fav.textContent = on ? '★' : '☆'; fav.setAttribute('aria-pressed', String(on)); fav.setAttribute('aria-label', (on ? 'Remove ' : 'Add ') + st.name + (on ? ' from favourites' : ' to favourites'));
   fav.addEventListener('click', () => toggleFav(st));
-  li.append(b, fav); return li;
+  if (favIndex === undefined) { li.append(b, fav); return li; }
+  const mv = (dir, txt, lab) => { const x = document.createElement('button'); x.type = 'button'; x.className = 'iconbtn'; x.textContent = txt; x.dataset.move = dir < 0 ? 'up' : 'down'; x.dataset.i = String(favIndex); x.setAttribute('aria-label', lab + ' ' + st.name); x.disabled = dir < 0 ? favIndex === 0 : favIndex === rui.favs.length - 1; x.addEventListener('click', () => moveFav(favIndex, dir)); return x; };
+  li.append(b, mv(-1, '▲', 'Move up'), mv(1, '▼', 'Move down'), fav); return li;
 }
 function emptyRow(text) { const li = document.createElement('li'); li.className = 'group'; const sp = document.createElement('span'); sp.style.fontWeight = '400'; sp.textContent = text; li.append(sp); return li; }
 function renderStations() { const ol = $('stationList'); ol.textContent = ''; for (const st of rui.results) ol.append(stationRow(st)); }
 function renderRadio() {
   const ol = $('favList'); ol.textContent = '';
   if (!rui.favs.length) ol.append(emptyRow('No favourites yet. Search below and press ☆ on a station.'));
-  for (const st of rui.favs) ol.append(stationRow(st));
-  renderStations(); renderRadioStatus();
+  rui.favs.forEach((st, i) => ol.append(stationRow(st, i)));
+  renderStations(); renderRadioStatus(); renderCar();
 }
 function renderRadioStatus() {
   const st = radio.original || radio.station, t = $('radioStatus');
@@ -1945,7 +2029,7 @@ function renderTransport() {
   $('repBtn').textContent = rl; $('repBtn').setAttribute('aria-label', rl.replace(' ', ': ')); $('repBtn').setAttribute('aria-pressed', String(state.repeat !== 'off'));
   $('muteBtn').setAttribute('aria-pressed', String(state.muted));
   $('vol').value = String(Math.round(state.volume * 100)); $('volPct').textContent = Math.round(state.volume * 100) + '%';
-  renderTime(); renderStatus(); updateMediaSession();
+  renderTime(); renderStatus(); updateMediaSession(); renderCar();
 }
 function renderStatus() {
   const r = routing(), chip = $('routeChip'), txt = $('routeText');
@@ -2190,6 +2274,98 @@ function renderTone() {
   });
   $('toneFlat').disabled = !state.eq.tone.some((v) => v);
 }
+/* ---------- car mode: large controls, favourites as tiles, screen kept awake. Opened only by the user. ---------- */
+const car = { open: false, src: 'radio', wake: null, lastFocus: null, plId: '' };
+function carIsRadio() { return car.src === 'radio'; }
+function carStateText() {
+  if (state.mode === 'radio' && radio.station) {
+    const t = { playing: 'Playing', buffering: 'Buffering…', connecting: 'Connecting…', recovering: 'Reconnecting…', paused: 'Paused', failed: 'Could not play · press Play to try again', stopped: 'Stopped' }[radio.state] || '';
+    return 'Radio · ' + t + (radio.direct && radio.active() ? ' · without EQ' : '');
+  }
+  const q = current(); if (!q) return 'Nothing playing';
+  return q.failed ? 'Cannot play this track' : state.intent === 'play' ? (el.paused || state.loading ? 'Loading…' : 'Playing') : state.intent === 'pause' ? 'Paused' : 'Stopped';
+}
+function carTile(text, sub, active, onTap) {
+  const b = document.createElement('button'); b.type = 'button'; b.className = 'car-tile'; b.setAttribute('aria-pressed', String(!!active));
+  const t = document.createElement('span'); t.className = 'car-tile-name'; t.textContent = text; b.append(t);
+  if (sub) { const s2 = document.createElement('span'); s2.className = 'car-tile-sub'; s2.textContent = sub; b.append(s2); }
+  b.addEventListener('click', onTap); return b;
+}
+function renderCar() {
+  if (!car.open) return;
+  const isRadioNow = state.mode === 'radio' && !!radio.station, q = current(), m = q && meta(q.trackId);
+  $('carState').textContent = carStateText();
+  $('carTitle').textContent = isRadioNow ? radio.station.name : q ? label(m) : carIsRadio() ? 'Choose a station' : 'Choose a playlist';
+  $('carSub').textContent = isRadioNow ? [radio.station.country, radio.station.codec].filter(Boolean).join(' · ') : q ? sub(m) : '';
+  const playing = isRadioNow ? radio.active() : state.intent === 'play' && !el.paused;
+  $('carPlay').setAttribute('aria-label', playing ? 'Pause' : 'Play');
+  $('carPlayIcon').setAttribute('d', playing ? 'M6 4h4v16H6zM14 4h4v16h-4z' : 'M7 4v16l13-8z');
+  const stepWord = state.mode === 'radio' || (!q && carIsRadio()) ? 'station' : 'track';
+  $('carPrev').setAttribute('aria-label', 'Previous ' + stepWord); $('carNext').setAttribute('aria-label', 'Next ' + stepWord);
+  $('carSrcRadio').setAttribute('aria-pressed', String(carIsRadio())); $('carSrcMusic').setAttribute('aria-pressed', String(!carIsRadio()));
+  const box = $('carTiles'), keep = document.activeElement && box.contains(document.activeElement) ? [...box.children].indexOf(document.activeElement) : -1;
+  box.textContent = '';
+  if (carIsRadio()) {
+    rui.favs.forEach((st) => box.append(carTile(st.name, '', isRadioNow && radio.original && radio.original.url === st.url, () => startRadio(st))));
+    if (!rui.favs.length) box.append(carEmpty('No favourite stations yet. Add them in the Radio tab while parked.'));
+  } else {
+    const qIds = state.queue.map((x) => x.trackId);
+    if (qIds.length) box.append(carTile('Current queue', qIds.length + (qIds.length === 1 ? ' track' : ' tracks'), state.mode === 'local' && !car.plId && state.intent === 'play', () => { car.plId = ''; if (state.mode !== 'local' || !q) setQueue(qIds, true); else play(); }));
+    for (const p of ui.playlists) {
+      const n = p.trackIds.filter((id) => lib.has(id)).length;
+      box.append(carTile(p.name, n + (n === 1 ? ' track' : ' tracks'), state.mode === 'local' && car.plId === p.id, () => { const ids = p.trackIds.filter((id) => lib.has(id)); if (!ids.length) return playerMsg('That playlist has no tracks left in the library.'); car.plId = p.id; setQueue(ids, true); }));
+    }
+    if (!qIds.length && !ui.playlists.length) box.append(carEmpty('No music queued and no saved playlists. Set them up while parked.'));
+  }
+  if (keep >= 0 && box.children[keep]) box.children[keep].focus();
+}
+function carEmpty(t) { const p2 = document.createElement('p'); p2.className = 'car-empty'; p2.textContent = t; return p2; }
+async function carWake() {
+  if (!car.open || car.wake) return;
+  if (!('wakeLock' in navigator)) { $('carNote').textContent = 'This browser cannot keep the screen on. If it turns off, change Auto-Lock in the phone settings.'; return; }
+  try { car.wake = await navigator.wakeLock.request('screen'); $('carNote').textContent = ''; car.wake.addEventListener('release', () => { car.wake = null; }); if (!car.open) { car.wake.release().catch(() => {}); car.wake = null; } }
+  catch (e) { $('carNote').textContent = 'The screen could not be kept on. If it turns off, change Auto-Lock in the phone settings.'; }
+}
+function openCar() {
+  car.open = true; car.lastFocus = document.activeElement;
+  car.src = state.mode === 'radio' || (!state.queue.length && rui.favs.length) ? 'radio' : 'music';
+  document.body.classList.add('car-open'); $('car').hidden = false; $('carNote').textContent = '';
+  renderCar(); carWake(); $('carPlay').focus();
+}
+function closeCar() {
+  car.open = false; document.body.classList.remove('car-open'); $('car').hidden = true;
+  if (car.wake) { car.wake.release().catch(() => {}); car.wake = null; }
+  const f = car.lastFocus && document.contains(car.lastFocus) ? car.lastFocus : $('carBtn'); f.focus();
+}
+function carToggle() {
+  if (state.mode === 'radio' && radio.station) return toggle();
+  if (state.queue.length && (!carIsRadio() || state.mode === 'local' && current())) return toggle();
+  if (carIsRadio()) { if (radio.original) return startRadio(radio.original); if (rui.favs.length) return startRadio(rui.favs[0]); return playerMsg('Add favourite stations in the Radio tab first.'); }
+  toggle();
+}
+function carStep(dir) {
+  if (state.mode === 'radio' || (carIsRadio() && !(state.mode === 'local' && current() && state.intent === 'play'))) { if (state.mode !== 'radio' && !rui.favs.length) return playerMsg('Add favourite stations in the Radio tab first.'); return radioStep(dir); }
+  dir > 0 ? next(false) : prev();
+}
+function initCar() {
+  $('carBtn').addEventListener('click', openCar);
+  $('carExit').addEventListener('click', closeCar);
+  $('carSrcRadio').addEventListener('click', () => { car.src = 'radio'; renderCar(); });
+  $('carSrcMusic').addEventListener('click', () => { car.src = 'music'; renderCar(); });
+  $('carPlay').addEventListener('click', carToggle);
+  $('carPrev').addEventListener('click', () => carStep(-1));
+  $('carNext').addEventListener('click', () => carStep(1));
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') carWake(); });
+  $('car').addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') { e.preventDefault(); closeCar(); return; }
+    if (e.key !== 'Tab') return;
+    const f = [...$('car').querySelectorAll('button')].filter((b) => !b.disabled && b.offsetParent !== null);
+    if (!f.length) return;
+    if (e.shiftKey && document.activeElement === f[0]) { e.preventDefault(); f[f.length - 1].focus(); }
+    else if (!e.shiftKey && document.activeElement === f[f.length - 1]) { e.preventDefault(); f[0].focus(); }
+  });
+}
+
 function setCompact(on) {
   document.body.classList.toggle('compact', on);
   $('compactBtn').setAttribute('aria-pressed', String(on)); $('compactBtn').textContent = on ? 'Full view' : 'Compact';
@@ -2220,8 +2396,8 @@ function updateMediaSession() {
     msKey = key;
     try { ms.metadata = !key ? null : new MediaMetadata(isRadio ? { title: radio.station.name, artist: 'Internet radio', album: 'RIKU' } : { title: label(m), artist: m.artist || '', album: m.album || '', artwork: coverUrl ? [{ src: coverUrl }] : [] }); } catch (e) {}
     const set = (a, f) => { try { ms.setActionHandler(a, f); } catch (e) {} };
-    set('previoustrack', isRadio ? null : () => prev());
-    set('nexttrack', isRadio ? null : () => next(false));
+    set('previoustrack', () => prev());   // in radio mode: previous favourite station
+    set('nexttrack', () => next(false));    // in radio mode: next favourite station
     set('seekto', isRadio ? null : (d) => { if (Number.isFinite(d.seekTime) && Number.isFinite(el.duration)) el.currentTime = Math.max(0, Math.min(el.duration, d.seekTime)); });
     set('seekbackward', isRadio ? null : (d) => { el.currentTime = Math.max(0, el.currentTime - (d.seekOffset || 10)); });
     set('seekforward', isRadio ? null : (d) => { if (Number.isFinite(el.duration)) el.currentTime = Math.min(el.duration, el.currentTime + (d.seekOffset || 10)); });
@@ -2322,10 +2498,10 @@ loadSettings();
 renderPresetSel(); renderFilters(); renderEq(); renderAll(); renderPlaylists();
 requestAnimationFrame(drawSpectrum);
 if (document.fonts && document.fonts.ready) document.fonts.ready.then(drawGraph);
-initLook(); initMediaSession(); initProfiles();
+initLook(); initCar(); initMediaSession(); initProfiles();
 initRadio();
 const ready = startLibrary();
-window.__riku = { TONE: TONE, setCompact: setCompact, setFinish: setFinish, prof: prof, eqSnapshot: eqSnapshot, get radio() { return radio; }, rui: rui, startRadio: startRadio, radioSearch: radioSearch, BUILTIN: BUILTIN, ready: ready, lib: lib, ui: ui, L: L, importFiles: importFiles, isImporting: () => importing, libReady: () => libReady, state: state, E: E, el: el, D: D, play: play, stop: stop, next: next, loadDemo: loadDemo, measureLive: measureLive, selfTest: selfTest, rebuildEq: rebuildEq, routing: routing, headroom: headroom, loadBuiltin: (id) => { loadBuiltin(id); renderPresetSel(); renderFilters(); eqChanged(); }, applyImport: applyImport };
+window.__riku = { car: car, openCar: openCar, closeCar: closeCar, radioStep: radioStep, TONE: TONE, setCompact: setCompact, setFinish: setFinish, prof: prof, eqSnapshot: eqSnapshot, get radio() { return radio; }, rui: rui, startRadio: startRadio, radioSearch: radioSearch, BUILTIN: BUILTIN, ready: ready, lib: lib, ui: ui, L: L, importFiles: importFiles, isImporting: () => importing, libReady: () => libReady, state: state, E: E, el: el, D: D, play: play, stop: stop, next: next, loadDemo: loadDemo, measureLive: measureLive, selfTest: selfTest, rebuildEq: rebuildEq, routing: routing, headroom: headroom, loadBuiltin: (id) => { loadBuiltin(id); renderPresetSel(); renderFilters(); eqChanged(); }, applyImport: applyImport };
 })();
 </script>
 </body>
