@@ -278,8 +278,9 @@ body.car-open { overflow: hidden; }
 .car button:active { background: #1d3670; }
 .car :focus-visible { outline: 4px solid #86d8ff; outline-offset: 3px; }
 .car-top { display: flex; gap: 12px; align-items: stretch; }
-.car-exit { min-height: 60px; padding: 0 14px; flex: 0 0 auto; }
-.car-top button { font-size: 18px; }
+.car-exit { min-height: 60px; padding: 0 12px; flex: 0 0 auto; }
+.car-top button { font-size: 17px; }
+.car-src button { padding: 0 6px; min-width: 0; }
 .car-src { display: flex; flex: 1; gap: 8px; }
 .car-src button { flex: 1; min-height: 60px; }
 .car-src button[aria-pressed="true"] { background: #eef4ff; color: #071330; border-color: #eef4ff; }
@@ -624,10 +625,11 @@ body[data-finish="champagne"] .soundfold > summary { background: linear-gradient
 </dialog>
 <div id="car" class="car" hidden role="dialog" aria-modal="true" aria-labelledby="carTitle">
   <div class="car-top">
-    <button class="car-exit" id="carExit" type="button">Exit car mode</button>
+    <button class="car-exit" id="carExit" type="button" aria-label="Exit car mode">Exit</button>
     <div class="car-src" role="group" aria-label="Show">
       <button type="button" id="carSrcRadio" aria-pressed="true">Radio</button>
       <button type="button" id="carSrcMusic" aria-pressed="false">Music</button>
+      <button type="button" id="carSrcPod" aria-pressed="false">Podcasts</button>
     </div>
   </div>
   <div class="car-main">
@@ -2706,8 +2708,9 @@ function renderTone() {
   $('toneFlat').disabled = !state.eq.tone.some((v) => v);
 }
 /* ---------- car mode: large controls, favourites as tiles, screen kept awake. Opened only by the user. ---------- */
-const car = { open: false, src: 'radio', wake: null, lastFocus: null, plId: '' };
+const car = { open: false, src: 'radio', wake: null, lastFocus: null, plId: '', eps: {}, loading: '', podToken: 0 };
 function carIsRadio() { return car.src === 'radio'; }
+function carIsPod() { return car.src === 'podcast'; }
 function carStateText() {
   if (state.mode === 'podcast' && pod.ep) {
     const t = { loading: 'Loading…', playing: 'Playing', buffering: 'Buffering…', paused: 'Paused', stopped: 'Stopped', failed: 'Could not play · press Play to try again' }[pod.state] || '';
@@ -2730,7 +2733,8 @@ function renderCar() {
   if (!car.open) return;
   const isRadioNow = state.mode === 'radio' && !!radio.station, isPodNow = state.mode === 'podcast' && !!pod.ep, q = !isPodNow && current(), m = q && meta(q.trackId);
   $('carState').textContent = carStateText();
-  $('carTitle').textContent = isPodNow ? pod.ep.title : isRadioNow ? radio.station.name : q ? label(m) : carIsRadio() ? 'Choose a station' : 'Choose a playlist';
+  $('carTitle').textContent = isPodNow ? pod.ep.title : isRadioNow ? radio.station.name : q ? label(m) : carIsRadio() ? 'Choose a station' : carIsPod() ? 'Choose a podcast' : 'Choose a playlist';
+  if (car.loading) $('carState').textContent = 'Loading ' + car.loading + '…';
   $('carSub').textContent = isPodNow ? (pod.show ? pod.show.name : '') : isRadioNow ? [radio.station.country, radio.station.codec].filter(Boolean).join(' · ') : q ? sub(m) : '';
   const playing = isPodNow ? podActive() : isRadioNow ? radio.active() : state.intent === 'play' && !el.paused;
   $('carPlay').setAttribute('aria-label', playing ? 'Pause' : 'Play');
@@ -2738,12 +2742,23 @@ function renderCar() {
   const stepWord = state.mode === 'radio' || (!q && carIsRadio()) ? 'station' : 'track';
   if (isPodNow) { $('carPrev').setAttribute('aria-label', 'Back 15 seconds'); $('carNext').setAttribute('aria-label', 'Forward 30 seconds'); }
   else { $('carPrev').setAttribute('aria-label', 'Previous ' + stepWord); $('carNext').setAttribute('aria-label', 'Next ' + stepWord); }
-  $('carSrcRadio').setAttribute('aria-pressed', String(carIsRadio())); $('carSrcMusic').setAttribute('aria-pressed', String(!carIsRadio()));
+  $('carSrcRadio').setAttribute('aria-pressed', String(carIsRadio())); $('carSrcMusic').setAttribute('aria-pressed', String(car.src === 'music')); $('carSrcPod').setAttribute('aria-pressed', String(carIsPod()));
   const box = $('carTiles'), keep = document.activeElement && box.contains(document.activeElement) ? [...box.children].indexOf(document.activeElement) : -1;
   box.textContent = '';
   if (carIsRadio()) {
     rui.favs.forEach((st) => box.append(carTile(st.name, '', isRadioNow && radio.original && radio.original.url === st.url, () => startRadio(st))));
     if (!rui.favs.length) box.append(carEmpty('No favourite stations yet. Add them in the Radio tab while parked.'));
+  } else if (carIsPod()) {
+    if (pod.ep && pod.show) {
+      const left = pod.a && Number.isFinite(pod.a.duration) ? pod.a.duration - pod.a.currentTime : pod.pos[pod.ep.id] && Number.isFinite(pod.ep.dur) ? pod.ep.dur - pod.pos[pod.ep.id] : NaN;
+      box.append(carTile('Continue: ' + pod.ep.title, [pod.show.name, fmtMin(left) ? fmtMin(left) + ' left' : ''].filter(Boolean).join(' · '), isPodNow, () => { if (isPodNow && podActive()) return; podResume(); }));
+    }
+    for (const show of pod.subs) {
+      const eps = car.eps[show.id], next = eps && carPick(eps);
+      const subTxt = next ? (pod.pos[next.id] ? 'Resume: ' : 'Newest: ') + next.title : show.artist;
+      box.append(carTile(show.name, subTxt, false, () => carPlayShow(show)));   // the playing episode is outlined on the Continue tile
+    }
+    if (!pod.subs.length && !pod.ep) box.append(carEmpty('No followed podcasts yet. Follow some in the Podcasts tab while parked.'));
   } else {
     const qIds = state.queue.map((x) => x.trackId);
     if (qIds.length) box.append(carTile('Current queue', qIds.length + (qIds.length === 1 ? ' track' : ' tracks'), state.mode === 'local' && !car.plId && state.intent === 'play', () => { car.plId = ''; if (state.mode !== 'local' || !q) setQueue(qIds, true); else play(); }));
@@ -2764,7 +2779,7 @@ async function carWake() {
 }
 function openCar() {
   car.open = true; car.lastFocus = document.activeElement;
-  car.src = state.mode === 'radio' || (!state.queue.length && rui.favs.length) ? 'radio' : 'music';
+  car.src = state.mode === 'podcast' ? 'podcast' : state.mode === 'radio' || (!state.queue.length && rui.favs.length) ? 'radio' : 'music';
   document.body.classList.add('car-open'); $('car').hidden = false; $('carNote').textContent = '';
   renderCar(); carWake(); $('carPlay').focus();
 }
@@ -2773,8 +2788,21 @@ function closeCar() {
   if (car.wake) { car.wake.release().catch(() => {}); car.wake = null; }
   const f = car.lastFocus && document.contains(car.lastFocus) ? car.lastFocus : $('carBtn'); f.focus();
 }
+/* Car podcast tiles: continue the episode in progress, otherwise the newest one not yet played. */
+function carPick(eps) { return eps.find((e) => pod.pos[e.id] && !pod.played[e.id]) || eps.find((e) => !pod.played[e.id]) || eps[0] || null; }
+async function carPlayShow(show) {
+  const token = ++car.podToken; car.loading = show.name; $('carNote').textContent = ''; renderCar();
+  let eps = [];
+  try { eps = POD.normEpisodes((await apple(POD.episodesPath(show.id, show.country || pod.store, 100))).results, upgradeHttp); } catch (e) {}
+  if (token !== car.podToken) return;
+  car.loading = '';
+  if (!eps.length) { $('carNote').textContent = 'The episodes of ' + show.name + ' could not be loaded. Try again, or choose another podcast.'; renderCar(); return; }
+  car.eps[show.id] = eps;
+  const ep = carPick(eps); playEpisode(ep, show); announce(show.name + ': ' + ep.title);
+}
 function carToggle() {
   if (state.mode === 'podcast' && pod.ep) return toggle();
+  if (carIsPod()) { if (pod.ep) return podResume(); if (pod.subs.length) return carPlayShow(pod.subs[0]); return playerMsg('Follow podcasts in the Podcasts tab first.'); }
   if (state.mode === 'radio' && radio.station) return toggle();
   if (state.queue.length && (!carIsRadio() || state.mode === 'local' && current())) return toggle();
   if (carIsRadio()) { if (radio.original) return startRadio(radio.original); if (rui.favs.length) return startRadio(rui.favs[0]); return playerMsg('Add favourite stations in the Radio tab first.'); }
@@ -2790,6 +2818,7 @@ function initCar() {
   $('carExit').addEventListener('click', closeCar);
   $('carSrcRadio').addEventListener('click', () => { car.src = 'radio'; renderCar(); });
   $('carSrcMusic').addEventListener('click', () => { car.src = 'music'; renderCar(); });
+  $('carSrcPod').addEventListener('click', () => { car.src = 'podcast'; renderCar(); });
   $('carPlay').addEventListener('click', carToggle);
   $('carPrev').addEventListener('click', () => carStep(-1));
   $('carNext').addEventListener('click', () => carStep(1));
