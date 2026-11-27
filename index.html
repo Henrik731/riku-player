@@ -244,7 +244,7 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
 .slot input[type=range]::-moz-range-thumb { width: 18px; height: 34px; border-radius: 4px; border: 1px solid #5d6878; background: linear-gradient(90deg, #fbfcfd 0%, #cfd6e0 40%, #3d4a60 48%, #3d4a60 52%, #cfd6e0 60%, #eef1f5 100%); box-shadow: -3px 0 5px rgba(0,0,0,.35); }
 .fname { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--text); overflow-wrap: anywhere; text-align: center; }
 .ffreq { font-size: 11px; color: var(--muted); }
-body.compact .pagehead, body.compact #soundPanel, body.compact #eqDetails, body.compact #sidePanel, body.compact #eqJump { display: none; }
+body.compact .pagehead, body.compact #soundFold, body.compact #soundPanel, body.compact #eqDetails, body.compact #sidePanel, body.compact #eqJump { display: none; }
 body.compact .app { grid-template-columns: minmax(0, 470px); justify-content: center; }
 /* finishes: silver is the default */
 body[data-finish="graphite"] .chassis { border-color: #1b1f25; background: repeating-linear-gradient(90deg, rgba(255,255,255,.03) 0 1px, rgba(0,0,0,.03) 1px 3px), linear-gradient(180deg, #606874 0%, #474e59 32%, #353a42 78%, #2a2e35 100%);
@@ -309,6 +309,20 @@ body.car-open { overflow: hidden; }
   .car-title { font-size: clamp(24px, 4.5vw, 38px); }
 }
 @media (min-width: 900px) { .car-tiles { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+
+/* ---------- foldable sound section ---------- */
+.soundfold { display: grid; gap: 12px; }
+.soundfold > summary { list-style: none; cursor: pointer; display: flex; align-items: center; gap: 10px; min-height: 52px; padding: 6px 14px; border-radius: 12px; border: 1px solid #98a4b4;
+  background: linear-gradient(180deg, #eef2f6, #d6dee8); box-shadow: inset 0 1px 0 #fff, 0 2px 0 #8f9baa, 0 4px 6px rgba(20,30,50,.22); color: var(--ink); }
+.soundfold > summary::-webkit-details-marker { display: none; }
+.soundfold > summary::before { content: "▸"; font-size: 14px; color: #3a4a63; }
+.soundfold[open] > summary::before { content: "▾"; }
+.soundfold[open] > summary { box-shadow: inset 0 2px 4px rgba(40,55,80,.25); }
+.sf-title { font-weight: 700; font-size: 13px; letter-spacing: .14em; text-transform: uppercase; color: #3a4a63; flex: none; }
+.sf-sum { font-size: 15px; font-weight: 500; letter-spacing: 0; text-transform: none; color: #1b2a44; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+body[data-finish="graphite"] .soundfold > summary { background: linear-gradient(180deg, #59616d, #3c424b); border-color: #1b1f25; box-shadow: inset 0 1px 0 rgba(255,255,255,.25), 0 2px 0 #22262c, 0 4px 6px rgba(0,0,0,.35); }
+body[data-finish="graphite"] .soundfold > summary, body[data-finish="graphite"] .sf-title, body[data-finish="graphite"] .sf-sum, body[data-finish="graphite"] .soundfold > summary::before { color: #e8edf4; }
+body[data-finish="champagne"] .soundfold > summary { background: linear-gradient(180deg, #fbf6ec, #e6dbc5); border-color: #b0a184; }
 </style>
 </head>
 <body>
@@ -383,6 +397,8 @@ body.car-open { overflow: hidden; }
       <span class="engrave">High fidelity audio</span>
     </div>
 
+    <details class="soundfold" id="soundFold" open>
+      <summary><span class="sf-title">Sound settings</span><span class="sf-sum" id="sfSum"></span></summary>
     <div class="light stack" id="soundPanel">
       <div class="row">
         <label class="label" for="profSel">Listening profile</label>
@@ -482,6 +498,7 @@ body.car-open { overflow: hidden; }
         </details>
       </div>
     </details>
+    </details>
   </section>
 
   <section class="dark stack" aria-label="Queue and library" id="sidePanel">
@@ -489,6 +506,7 @@ body.car-open { overflow: hidden; }
       <button class="btn small" type="button" role="tab" id="tabQueue" aria-selected="true" aria-controls="paneQueue">Queue</button>
       <button class="btn small" type="button" role="tab" id="tabLib" aria-selected="false" aria-controls="paneLib">Library</button>
       <button class="btn small" type="button" role="tab" id="tabRadio" aria-selected="false" aria-controls="paneRadio">Radio</button>
+      <button class="btn small" type="button" role="tab" id="tabPod" aria-selected="false" aria-controls="panePod">Podcasts</button>
       <span class="note" id="queueCount" style="margin-left:auto"></span>
     </div>
     <p class="note" id="playerMsg" role="status"></p>
@@ -549,6 +567,36 @@ body.car-open { overflow: hidden; }
         </div>
       </details>
       <p class="note">Unless you tick the box above, search results only include stations whose directory entry reports 128 kbps or more. Only https streams are shown. That figure is reported by the directory, not measured here, and different codecs are not equivalent at the same bitrate. Favourites and addresses you add yourself are kept even when no bitrate is known. Searching and playing contact the directory and the station; nothing else is sent.</p>
+    </div>
+    <div class="stack queue" id="panePod" role="tabpanel" aria-labelledby="tabPod" hidden>
+      <p class="status-text" id="podStatus" role="status">No episode playing.</p>
+      <div class="row" id="podCtl" hidden>
+        <button class="btn small" id="podBack" type="button" aria-label="Back 15 seconds">−15 s</button>
+        <button class="btn small" id="podFwd" type="button" aria-label="Forward 30 seconds">+30 s</button>
+        <button class="btn small" id="podRate" type="button">Speed 1×</button>
+      </div>
+      <div id="podHome" class="stack">
+        <h3>Your podcasts</h3>
+        <ol id="podSubs"></ol>
+        <h3>Find podcasts</h3>
+        <form id="podForm" class="stack">
+          <div class="row">
+            <label class="sr" for="podTerm">Podcast name or topic</label><input type="text" id="podTerm" maxlength="80" placeholder="Name or topic, e.g. historia">
+            <label class="sr" for="podStore">Directory country</label><select id="podStore"></select>
+          </div>
+          <div class="row"><button class="btn small" type="submit" id="podSearch">Search</button><button class="btn small" type="button" id="podTop">Popular in Finland</button></div>
+        </form>
+        <p class="note" id="podSearchStatus" role="status">Search Apple's podcast directory. Most Finnish podcasts, including Yle's, are listed there.</p>
+        <ol id="podResults"></ol>
+      </div>
+      <div id="podShow" class="stack" hidden>
+        <div class="row"><button class="btn small" id="podHomeBtn" type="button">‹ All podcasts</button><button class="btn small" id="podFollow" type="button" aria-pressed="false">Follow</button></div>
+        <h3 id="podShowName" tabindex="-1"></h3>
+        <p class="note" id="podShowMeta"></p>
+        <p class="note" id="podEpStatus" role="status"></p>
+        <ol id="podEpisodes"></ol>
+      </div>
+      <p class="note">Episodes stream from each podcast's own host; nothing is downloaded. Searches go to Apple's podcast directory. Some hosts do not allow audio processing, and their episodes play without your EQ. Where you stopped is remembered on this device.</p>
     </div>
     <div class="drop" id="drop">Drop audio files here, or use Open files. Files are copied into this browser's storage on this device and are not uploaded.</div>
     <p class="note">Which formats play depends on this browser's decoders. Keys: Space play/pause · ←/→ seek 5 s · M mute · O open files.</p>
@@ -1215,6 +1263,101 @@ b){(new g(a)).read(b)},Reader:g,Config:q}},{"./ArrayFileReader":3,"./BlobFileRea
 
 </script>
 <script>
+/* RIKU podcasts — directory helpers (Apple podcast directory), no DOM and no playback.
+ * The directory is reached through https://itunes.apple.com (search and lookup) and Apple's chart feed.
+ * Everything returned is treated as untrusted text: trimmed, length-limited, and only https links are kept
+ * (http audio links are upgraded to https when the page itself is served over https). */
+(function (root, factory) {
+  if (typeof module === 'object' && module.exports) module.exports = factory();
+  else root.RikuPod = factory();
+})(typeof self !== 'undefined' ? self : this, function () {
+  'use strict';
+  const STORES = Object.freeze([['FI', 'Finland'], ['US', 'United States']]);
+  const BASE = 'https://itunes.apple.com';
+
+  function text(v, n) { return String(v == null ? '' : v).replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, n); }
+  function searchPath(term, country, limit) {
+    const p = new URLSearchParams({ media: 'podcast', entity: 'podcast', country: country, term: text(term, 80), limit: String(limit || 30) });
+    return '/search?' + p.toString();
+  }
+  function episodesPath(id, country, limit) {
+    const p = new URLSearchParams({ id: String(id), media: 'podcast', entity: 'podcastEpisode', country: country, limit: String(limit || 100), sort: 'recent' });
+    return '/lookup?' + p.toString();
+  }
+  function chartUrl(country, n) { return 'https://rss.applemarketingtools.com/api/v2/' + String(country).toLowerCase() + '/podcasts/top/' + (n || 50) + '/podcasts.json'; }
+  /* An address that can be played: https, or http upgraded to https when the page is https. Never credentials. */
+  function audioUrl(u, upgrade) {
+    let url; try { url = new URL(String(u || '').trim()); } catch (e) { return ''; }
+    if (url.username || url.password) return '';
+    if (url.protocol === 'http:') { if (!upgrade) return url.href; url.protocol = 'https:'; return url.href; }
+    return url.protocol === 'https:' ? url.href : '';
+  }
+  function safeImg(u) { const a = audioUrl(u, true); return a.length <= 2000 ? a : ''; }
+  function normShow(r, country) {
+    r = r || {};
+    const id = r.collectionId != null ? r.collectionId : r.id;
+    if (id == null || !(r.collectionName || r.name)) return null;
+    return { id: String(id).slice(0, 40), name: text(r.collectionName || r.name, 200), artist: text(r.artistName, 200),
+      artwork: safeImg(r.artworkUrl600 || r.artworkUrl100 || r.artworkUrl60), feedUrl: audioUrl(r.feedUrl, true),
+      genre: text(r.primaryGenreName || (Array.isArray(r.genres) && r.genres[0] && (r.genres[0].name || r.genres[0])) || '', 60),
+      country: country === 'US' ? 'US' : 'FI' };
+  }
+  function normShows(results, country) {
+    const out = [], seen = new Set();
+    for (const r of Array.isArray(results) ? results : []) {
+      if (r && r.kind && r.kind !== 'podcast') continue;
+      const s = normShow(r, country); if (!s || seen.has(s.id)) continue;
+      seen.add(s.id); out.push(s);
+    }
+    return out;
+  }
+  function parseDuration(v) {
+    if (v == null || v === '') return NaN;
+    if (typeof v === 'number') return v > 0 ? v : NaN;
+    const s = String(v).trim();
+    if (/^\d+(\.\d+)?$/.test(s)) return Number(s);
+    const m = /^(\d+):(\d{1,2})(?::(\d{1,2}))?$/.exec(s);
+    if (!m) return NaN;
+    return m[3] != null ? Number(m[1]) * 3600 + Number(m[2]) * 60 + Number(m[3]) : Number(m[1]) * 60 + Number(m[2]);
+  }
+  function episode(o, upgrade) {
+    const url = audioUrl(o.url, upgrade); if (!url || !o.title) return null;
+    const t = Date.parse(o.date);
+    return { id: text(o.id || url, 300), title: text(o.title, 300), url: url, date: Number.isFinite(t) ? new Date(t).toISOString() : '',
+      dur: Number.isFinite(o.dur) && o.dur > 0 ? o.dur : NaN, desc: text(o.desc, 400) };
+  }
+  function sortDedupe(list) {
+    const seen = new Set(), out = [];
+    for (const e of list) { if (!e || seen.has(e.id)) continue; seen.add(e.id); out.push(e); }
+    return out.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+  }
+  /* Episodes from Apple's lookup reply. The first result is the show itself and is skipped. */
+  function normEpisodes(results, upgrade) {
+    return sortDedupe((Array.isArray(results) ? results : []).filter((r) => r && (r.wrapperType === 'podcastEpisode' || r.kind === 'podcast-episode'))
+      .map((r) => episode({ id: r.trackId != null ? 'a' + r.trackId : r.episodeGuid, title: r.trackName, url: r.episodeUrl, date: r.releaseDate,
+        dur: Number(r.trackTimeMillis) / 1000, desc: r.shortDescription || r.description }, upgrade)));
+  }
+  /* Episodes from a podcast's own RSS feed. `doc` is a parsed XML document (DOMParser in the browser). */
+  function rssEpisodes(doc, upgrade) {
+    if (!doc || !doc.getElementsByTagName) return [];
+    const items = [...doc.getElementsByTagName('item')].slice(0, 300);
+    const child = (el, name) => { for (const c of el.children || []) if (c.localName === name || c.nodeName === name) return c; return null; };
+    return sortDedupe(items.map((it) => {
+      const enc = child(it, 'enclosure'), g = child(it, 'guid'), d = child(it, 'duration');
+      return episode({ id: g && g.textContent ? 'g' + g.textContent : null, title: (child(it, 'title') || {}).textContent, url: enc && enc.getAttribute('url'),
+        date: (child(it, 'pubDate') || {}).textContent, dur: parseDuration(d && d.textContent), desc: (child(it, 'description') || child(it, 'summary') || {}).textContent }, upgrade);
+    }));
+  }
+  /* Apple's chart feed: { feed: { results: [{ id, name, artistName, artworkUrl100 }] } } */
+  function normChart(json, country) {
+    const r = json && json.feed && Array.isArray(json.feed.results) ? json.feed.results : [];
+    return normShows(r.map((x) => ({ collectionId: x.id, collectionName: x.name, artistName: x.artistName, artworkUrl100: x.artworkUrl100, genres: x.genres })), country);
+  }
+  return { STORES, BASE, text, searchPath, episodesPath, chartUrl, audioUrl, safeImg, normShow, normShows, normEpisodes, rssEpisodes, normChart, parseDuration };
+});
+
+</script>
+<script>
 (() => {
 'use strict';
 const D = RikuDSP;
@@ -1243,8 +1386,9 @@ const state = {
 const E = { ctx: null, fatal: null, eqError: null, branches: [], retiring: 0, sig: 0, lastMeasure: null, measuring: false };
 const el = new Audio(); el.preload = 'auto';
 let radio = { state: 'stopped', direct: false, station: null, original: null, a: null, msg: '', eqFailReason: '', since: 0, active: () => false };   // replaced by the real session in initRadio()
-function srcKey() { return state.mode === 'radio' ? 'radio:' + radio.gen : 'local:' + loadToken; }   // identifies the current source; a measurement only vouches for the source it was taken on
-function audible() { return state.mode === 'radio' ? radio.state === 'playing' && !radio.direct : !el.paused; }
+function srcKey() { return state.mode === 'radio' ? 'radio:' + radio.gen : state.mode === 'podcast' ? 'pod:' + pod.gen : 'local:' + loadToken; }   // identifies the current source; a measurement only vouches for the source it was taken on
+function audible() { return state.mode === 'radio' ? radio.state === 'playing' && !radio.direct : state.mode === 'podcast' ? pod.state === 'playing' && !pod.direct : !el.paused; }
+function curMedia() { return state.mode === 'podcast' ? pod.a : state.mode === 'local' ? el : null; }
 let loadToken = 0;
 const L = RikuLibrary;
 const lib = new Map();        // track id -> metadata
@@ -1280,6 +1424,8 @@ function presetText() { return D.exportAutoEq({ filters: state.eq.filters, sourc
 const TONE = [{ label: 'Bass', type: 'LSC', fc: 100, q: 0.7 }, { label: 'Warmth', type: 'PK', fc: 300, q: 0.9 }, { label: 'Mid', type: 'PK', fc: 1000, q: 0.9 }, { label: 'Presence', type: 'PK', fc: 3500, q: 0.9 }, { label: 'Air', type: 'HSC', fc: 9000, q: 0.7 }];
 function toneFilters() { return TONE.map((b, i) => ({ num: 900 + i, enabled: true, type: b.type, fc: b.fc, gain: state.eq.tone[i] || 0, q: b.q })); }
 function setTone(a) { state.eq.tone = TONE.map((_, i) => { const v = Array.isArray(a) ? Number(a[i]) : 0; return Number.isFinite(v) && Math.abs(v) <= 6 ? Math.round(v * 2) / 2 : 0; }); }
+let soundOpenPref = null, soundFoldSync = false;   // null = never chosen: open on wide screens, folded on phones
+function applySoundFold() { soundFoldSync = true; $('soundFold').open = soundOpenPref === null ? window.innerWidth >= 700 : soundOpenPref; soundFoldSync = false; }
 function eqFilters() { return state.eq.enabled ? state.eq.filters.concat(toneFilters()) : []; }
 function headroom() {
   const a = D.autoPreamp(eqFilters(), fs(), MARGIN_DB);
@@ -1293,7 +1439,7 @@ function saveSettings() {
     const q = state.eq;
     localStorage.setItem(LS_KEY, JSON.stringify({ v: 1, volume: state.volume, muted: state.muted, shuffle: state.shuffle, repeat: state.repeat,
       eq: { enabled: q.enabled, presetId: q.presetId, name: q.name, source: q.source, baseText: q.baseText, text: q.filters.length ? presetText() : '', sourcePreampRaw: q.sourcePreampRaw, preampMode: q.preampMode, manualPreamp: q.manualPreamp, tone: q.tone },
-      eqOpen: $('eqDetails').open, compact: document.body.classList.contains('compact'), finish: document.body.dataset.finish || 'silver' }));
+      eqOpen: $('eqDetails').open, soundOpen: soundOpenPref, compact: document.body.classList.contains('compact'), finish: document.body.dataset.finish || 'silver' }));
   } catch (e) { /* storage unavailable: settings last for this visit only */ }
 }
 function setPreset(id, parsed, name, source, baseText) {
@@ -1323,6 +1469,7 @@ function loadSettings() {
     state.eq.enabled = q.enabled !== false; setTone(q.tone);
     if (q.preampMode === 'manual' && Number.isFinite(q.manualPreamp) && Math.abs(q.manualPreamp) <= 60) { state.eq.preampMode = 'manual'; state.eq.manualPreamp = q.manualPreamp; }
     if (s.eqOpen) $('eqDetails').open = true;
+    if (typeof s.soundOpen === 'boolean') soundOpenPref = s.soundOpen;
     if (s.compact) document.body.classList.add('compact');
     if (['silver', 'graphite', 'champagne'].includes(s.finish)) document.body.dataset.finish = s.finish;
   } catch (e) { loadBuiltin('flat'); }
@@ -1394,9 +1541,11 @@ function applyVolume() {
   if (E.ctx) { E.vol.gain.setTargetAtTime(g, E.ctx.currentTime, 0.015); el.volume = 1; }
   else { try { el.volume = g; } catch (e) {} }
   if (radio.a && radio.direct) { try { radio.a.volume = g; } catch (e) {} }
+  if (pod.a && pod.direct) { try { pod.a.volume = g; } catch (e) {} }
 }
 function routing() {
   if (E.fatal) return { code: 'direct', cls: 'warn', chip: 'EQ BYPASSED', text: 'Direct playback: ' + E.fatal + '. The EQ, preamp and spectrum display are not in the signal path.' };
+  if (state.mode === 'podcast' && pod.direct && podActive()) return { code: 'direct', cls: 'warn', chip: 'EQ BYPASSED', text: 'Direct podcast playback: ' + (pod.eqFail ? pod.eqFail + '.' : 'the audio engine is not available.') + ' The EQ, preamp and spectrum are bypassed for this episode. The setup below is selected but not applied.' };
   if (state.mode === 'radio' && radio.direct && radio.active()) return { code: 'direct', cls: 'warn', chip: 'EQ BYPASSED', text: 'Direct radio playback: ' + (radio.eqFailReason ? 'the EQ-compatible connection to this station failed (' + radio.eqFailReason + '). Many stations do not permit audio processing by web pages.' : 'the audio engine is not available.') + ' The EQ, preamp and spectrum are bypassed. The setup below is selected but not applied.' };
   if (!E.ctx) return { code: 'idle', cls: 'idle', chip: 'EQ IDLE', text: 'Setup selected. Processing starts with playback.' };
   if (E.ctx.state !== 'running') return { code: 'suspended', cls: 'warn', chip: 'AUDIO ' + E.ctx.state.toUpperCase(), text: 'The audio engine is ' + E.ctx.state + ', so nothing is being processed. Press Play to resume.' };
@@ -1440,7 +1589,7 @@ async function showCover(id, token) {
 }
 async function loadTrack(i, autoplay) {
   const q = state.queue[i]; if (!q) return;
-  if (autoplay && state.mode === 'radio') { radio.stop(); state.mode = 'local'; }
+  if (autoplay && state.mode !== 'local') { radio.stop(); podStop(); state.mode = 'local'; }
   const token = ++loadToken; state.index = i; state.loading = true; counted = false;
   state.intent = autoplay ? 'play' : (state.intent === 'play' ? 'pause' : state.intent);
   // Start the audio engine inside the user's click, before any asynchronous storage read.
@@ -1474,6 +1623,7 @@ async function startPlayback() {
   renderAll();
 }
 function play() {
+  if (state.mode === 'podcast') { podResume(); return; }
   if (state.mode === 'radio' && radio.station) { if (!radio.active()) startRadio(radio.original || radio.station); return; }
   if (!state.queue.length) { playerMsg('The queue is empty. Open files, load the demo, or add tracks from the library.'); return; }
   const q = current();
@@ -1485,9 +1635,9 @@ function play() {
   }
   state.intent = 'play'; startPlayback();
 }
-function pause() { state.intent = 'pause'; el.pause(); renderAll(); }
-function stop() { if (state.mode === 'radio') { radio.stop(); renderAll(); return; } state.intent = 'stop'; el.pause(); try { el.currentTime = 0; } catch (e) {} renderAll(); }
-function toggle() { if (state.mode === 'radio' && radio.station) { if (radio.active()) radio.pause(); else startRadio(radio.original || radio.station); return; } if (state.intent === 'play' && !el.paused) pause(); else play(); }
+function pause() { if (state.mode === 'podcast') { if (pod.a) pod.a.pause(); return; } state.intent = 'pause'; el.pause(); renderAll(); }
+function stop() { if (state.mode === 'podcast') { podStop(); podSet('stopped', pod.ep ? 'Stopped. Play continues from where you stopped.' : ''); return; } if (state.mode === 'radio') { radio.stop(); renderAll(); return; } state.intent = 'stop'; el.pause(); try { el.currentTime = 0; } catch (e) {} renderAll(); }
+function toggle() { if (state.mode === 'podcast') { if (podActive()) pause(); else podResume(); return; } if (state.mode === 'radio' && radio.station) { if (radio.active()) radio.pause(); else startRadio(radio.original || radio.station); return; } if (state.intent === 'play' && !el.paused) pause(); else play(); }
 /* In radio mode, Next and Previous step through the favourites list, in its order, wrapping at the ends. */
 function radioStep(dir) {
   const favs = rui.favs;
@@ -1497,12 +1647,14 @@ function radioStep(dir) {
   startRadio(favs[i]); announce(favs[i].name);
 }
 function next(auto) {
+  if (state.mode === 'podcast') { podSkip(30); return; }
   if (state.mode === 'radio') { radioStep(1); return; }
   const n = step(1, state.repeat === 'all');
   if (n < 0) { if (auto) stop(); else playerMsg('End of the queue.'); return; }
   loadTrack(n, state.intent === 'play' || auto);
 }
 function prev() {
+  if (state.mode === 'podcast') { podSkip(-15); return; }
   if (state.mode === 'radio') { radioStep(-1); return; }
   if (el.currentTime > 3) { el.currentTime = 0; return; }
   const n = step(-1, state.repeat === 'all');
@@ -1736,9 +1888,10 @@ async function deletePlaylist() {
 }
 function showTab(t) {
   ui.tab = t;
-  for (const [k, pane, tab] of [['queue', 'paneQueue', 'tabQueue'], ['lib', 'paneLib', 'tabLib'], ['radio', 'paneRadio', 'tabRadio']]) { $(pane).hidden = t !== k; $(tab).setAttribute('aria-selected', String(t === k)); }
+  for (const [k, pane, tab] of [['queue', 'paneQueue', 'tabQueue'], ['lib', 'paneLib', 'tabLib'], ['radio', 'paneRadio', 'tabRadio'], ['pod', 'panePod', 'tabPod']]) { $(pane).hidden = t !== k; $(tab).setAttribute('aria-selected', String(t === k)); }
   if (t === 'lib') { renderLibrary(); renderStorage(); }
   if (t === 'radio') renderRadio();
+  if (t === 'pod') renderPod();
 }
 
 /* ---------- radio ---------- */
@@ -1846,7 +1999,7 @@ function renderRadioStatus() {
 }
 function startRadio(st) {
   if (rui.blocked) { $('radioStatus').textContent = BLOCKED_TEXT; return; }
-  state.mode = 'radio'; state.intent = 'stop'; loadToken++; el.pause();
+  podStop(); state.mode = 'radio'; state.intent = 'stop'; loadToken++; el.pause();
   ensureCtx(); if (E.ctx && E.ctx.state !== 'running') E.ctx.resume().catch(() => {});
   radio.play(st);
   if (st.source === 'directory' && rui.good) radioApi('/json/url/' + encodeURIComponent(st.id)).catch(() => {});   // the directory's play counter
@@ -1880,6 +2033,218 @@ function initRadio() {
   $('cAdd').addEventListener('click', addCustom);
   setInterval(() => { if (state.mode === 'radio') renderTime(); }, 1000);
   renderRadio();
+}
+
+/* ---------- podcasts ---------- */
+const POD = window.RikuPod, POD_KEY = 'riku.podcasts.v1', POD_RATES = [1, 1.25, 1.5];
+const pod = { a: null, detach: null, ep: null, show: null, direct: false, eqFail: '', state: 'stopped', msg: '', gen: 0, noEq: new Set(), lastSave: 0,
+  store: 'FI', subs: [], pos: {}, played: {}, rate: 1, view: 'home', open: null, episodes: [], results: [], token: 0, searchToken: 0 };
+const upgradeHttp = location.protocol === 'https:';
+function podActive() { return pod.state === 'playing' || pod.state === 'buffering' || pod.state === 'loading'; }
+function podLoad() {
+  try {
+    const s = JSON.parse(localStorage.getItem(POD_KEY) || 'null'); if (!s || s.v !== 1) return;
+    if (POD.STORES.some((x) => x[0] === s.store)) pod.store = s.store;
+    if (Array.isArray(s.subs)) pod.subs = s.subs.filter((x) => x && typeof x.id === 'string' && typeof x.name === 'string').slice(0, 100)
+      .map((x) => ({ id: x.id.slice(0, 40), name: x.name.slice(0, 200), artist: String(x.artist || '').slice(0, 200), artwork: POD.safeImg(x.artwork), feedUrl: POD.audioUrl(x.feedUrl, true), genre: String(x.genre || '').slice(0, 60), country: x.country === 'US' ? 'US' : 'FI' }));
+    if (s.pos && typeof s.pos === 'object') for (const k of Object.keys(s.pos).slice(-500)) { const v = Number(s.pos[k]); if (Number.isFinite(v) && v > 0) pod.pos[k] = v; }
+    if (s.played && typeof s.played === 'object') for (const k of Object.keys(s.played).slice(-2000)) pod.played[k] = 1;
+    if (POD_RATES.includes(s.rate)) pod.rate = s.rate;
+  } catch (e) {}
+}
+function podSave() {
+  const trim = (o, n) => { const k = Object.keys(o); for (const x of k.slice(0, Math.max(0, k.length - n))) delete o[x]; };
+  trim(pod.pos, 500); trim(pod.played, 2000);
+  try { localStorage.setItem(POD_KEY, JSON.stringify({ v: 1, store: pod.store, subs: pod.subs, pos: pod.pos, played: pod.played, rate: pod.rate })); } catch (e) {}
+}
+/* Apple's directory: try a normal request first; if the browser blocks it, fall back to the directory's script-callback (JSONP) form. */
+function jsonp(url) {
+  return new Promise((resolve, reject) => {
+    const cb = '__rikuPod' + Date.now().toString(36) + Math.floor(Math.random() * 1e6), sc = document.createElement('script');
+    const done = () => { clearTimeout(t); try { delete window[cb]; } catch (e) { window[cb] = undefined; } sc.remove(); };
+    const t = setTimeout(() => { done(); reject(new Error('no answer within 10 seconds')); }, 10000);
+    window[cb] = (data) => { done(); resolve(data); };
+    sc.onerror = () => { done(); reject(new Error('the directory could not be reached')); };
+    sc.src = url + (url.indexOf('?') >= 0 ? '&' : '?') + 'callback=' + cb;
+    document.head.append(sc);
+  });
+}
+async function apple(path) {
+  const url = POD.BASE + path;
+  try { return await fetchJson(url); } catch (e) { if (rui.blocked) throw new Error('this copy of the player cannot reach outside services'); }
+  return jsonp(url);
+}
+function storeName(c) { const x = POD.STORES.find((y) => y[0] === c); return x ? x[1] : c; }
+function fmtMin(sec) { if (!Number.isFinite(sec) || sec <= 0) return ''; const m = Math.round(sec / 60); return m >= 60 ? Math.floor(m / 60) + ' h ' + (m % 60) + ' min' : Math.max(1, m) + ' min'; }
+function fmtDate(iso) { const t = Date.parse(iso); return Number.isFinite(t) ? new Date(t).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : ''; }
+function isSub(show) { return pod.subs.some((x) => x.id === show.id); }
+function toggleSub(show) {
+  if (isSub(show)) pod.subs = pod.subs.filter((x) => x.id !== show.id);
+  else { if (pod.subs.length >= 100) { $('podSearchStatus').textContent = 'You follow 100 podcasts, the limit. Unfollow one first.'; return; } pod.subs.push({ id: show.id, name: show.name, artist: show.artist, artwork: show.artwork, feedUrl: show.feedUrl, genre: show.genre, country: show.country }); }
+  podSave(); renderPod(); announce(isSub(show) ? 'Following ' + show.name + '.' : 'No longer following ' + show.name + '.');
+}
+async function podSearch(top) {
+  const token = ++pod.searchToken, st = $('podSearchStatus'), term = $('podTerm').value.trim();
+  if (!top && !term) { st.textContent = 'Type a podcast name or a topic first.'; return; }
+  st.textContent = top ? 'Loading the most popular podcasts in ' + storeName(pod.store) + '…' : 'Searching…'; pod.results = []; renderPodResults();
+  try {
+    pod.results = top ? POD.normChart(await fetchJson(POD.chartUrl(pod.store, 50)), pod.store) : POD.normShows((await apple(POD.searchPath(term, pod.store, 30))).results, pod.store);
+    if (token !== pod.searchToken) return;
+    st.textContent = pod.results.length ? (top ? 'The ' + pod.results.length + ' most popular podcasts in Apple\'s ' + storeName(pod.store) + ' chart. Popular is not the same as Finnish-language.' : pod.results.length + ' podcasts found in the ' + storeName(pod.store) + ' directory.') + ' Tap one to see its episodes.'
+      : 'Nothing found. Try a shorter word, or the other directory country.';
+  } catch (e) {
+    if (token !== pod.searchToken) return;
+    st.textContent = (top ? 'The chart could not be loaded (' : 'The podcast directory could not be reached (') + ((e && e.message) || 'network error') + ').' + (top ? ' Search by name instead.' : ' The cause may be your network, or Apple refusing requests from web pages.');
+  }
+  renderPodResults();
+}
+async function openShow(show) {
+  const token = ++pod.token;
+  pod.view = 'show'; pod.open = show; pod.episodes = []; renderPod();
+  $('podShowName').focus();
+  const st = $('podEpStatus'); st.textContent = 'Loading episodes…';
+  let eps = [], err = '';
+  try {
+    const r = await apple(POD.episodesPath(show.id, show.country || pod.store, 100));
+    if (token !== pod.token) return;
+    const info = POD.normShows((r.results || []).filter((x) => x && x.kind === 'podcast'), show.country)[0];
+    if (info) { for (const k of ['artist', 'artwork', 'feedUrl', 'genre']) if (info[k]) show[k] = info[k]; const sub = pod.subs.find((x) => x.id === show.id); if (sub) { Object.assign(sub, { artwork: show.artwork, feedUrl: show.feedUrl }); podSave(); } }
+    eps = POD.normEpisodes(r.results, upgradeHttp);
+  } catch (e) { err = (e && e.message) || 'network error'; }
+  if (!eps.length && show.feedUrl) {   // the directory gave no episode list: try the podcast's own feed (works only if the feed allows web pages)
+    try { const res = await fetch(show.feedUrl); if (!res.ok) throw new Error('the feed answered ' + res.status); eps = POD.rssEpisodes(new DOMParser().parseFromString(await res.text(), 'application/xml'), upgradeHttp); }
+    catch (e) { if (!err) err = 'the podcast\'s own feed does not allow web pages to read it'; }
+  }
+  if (token !== pod.token) return;
+  pod.episodes = eps;
+  st.textContent = eps.length ? eps.length + (eps.length === 1 ? ' episode' : ' episodes') + ', newest first.' : 'No episodes could be loaded' + (err ? ': ' + err : '') + '.';
+  renderPod();
+}
+function podSavePos(force) {
+  if (!pod.a || !pod.ep) return;
+  const t = pod.a.currentTime || 0, d = pod.a.duration;
+  if (!(t > 1)) return;
+  if (Number.isFinite(d) && d - t < Math.min(20, d * 0.1)) delete pod.pos[pod.ep.id]; else pod.pos[pod.ep.id] = Math.floor(t);   // the last 20 s (or 10 %) count as finished
+  const now = Date.now(); if (force || now - pod.lastSave > 5000) { pod.lastSave = now; podSave(); }
+}
+function podRelease() {
+  if (pod.a) podSavePos(true);
+  pod.gen++;
+  if (pod.detach) { try { pod.detach(); } catch (e) {} pod.detach = null; }
+  if (pod.a) { const a = pod.a; pod.a = null; try { a.pause(); a.removeAttribute('src'); a.load(); } catch (e) {} }
+}
+function podStop() { if (!pod.a && pod.state === 'stopped') return; podRelease(); pod.state = 'stopped'; }
+function podSet(st, msg) { pod.state = st; if (msg !== undefined) pod.msg = msg; renderTransport(); renderPodStatus(); if (ui.tab === 'pod' && pod.view === 'show') renderEpisodes(); }
+function hostOf(u) { try { return new URL(u).host; } catch (e) { return ''; } }
+function playEpisode(ep, show) {
+  radio.stop(); loadToken++; el.pause(); state.intent = 'stop'; state.mode = 'podcast';
+  ensureCtx(); if (E.ctx && E.ctx.state !== 'running') E.ctx.resume().catch(() => {});
+  podRelease(); pod.ep = ep; pod.show = show;
+  podConnect(pod.played[ep.id] ? 0 : pod.pos[ep.id] || 0);
+}
+function podConnect(startAt) {
+  podRelease();
+  const ep = pod.ep, host = hostOf(ep.url), useEq = !!E.ctx && !E.fatal && !pod.noEq.has(host), gen = pod.gen;
+  pod.direct = !useEq; if (useEq) pod.eqFail = '';
+  const a = new Audio(); pod.a = a; a.preload = 'auto';
+  if (useEq) {
+    a.crossOrigin = 'anonymous';
+    try { const n = E.ctx.createMediaElementSource(a); n.connect(E.eqIn); pod.detach = () => { try { n.disconnect(); } catch (e) {} }; }
+    catch (e) { pod.noEq.add(host); pod.eqFail = 'the audio engine refused this episode'; pod.a = null; return podConnect(startAt); }
+  } else { try { a.volume = state.muted ? 0 : state.volume * state.volume; } catch (e) {} }
+  let heard = false, seeked = !(startAt > 0);
+  const on = (ev, fn) => a.addEventListener(ev, () => { if (gen === pod.gen) fn(); });
+  on('loadedmetadata', () => { if (!seeked) { seeked = true; try { if (!Number.isFinite(a.duration) || startAt < a.duration - 5) a.currentTime = startAt; } catch (e) {} } a.playbackRate = pod.rate; renderTime(); });
+  on('playing', () => { heard = true; podSet('playing', pod.direct ? 'Playing directly. EQ is bypassed for this podcast.' : 'Playing through the EQ engine.'); });
+  on('waiting', () => { if (pod.state === 'playing') podSet('buffering', 'Buffering…'); });
+  on('pause', () => { if (!a.ended && pod.state !== 'stopped') { podSavePos(true); podSet('paused', 'Paused. Play continues from here.'); } });
+  on('timeupdate', () => { podSavePos(false); renderTime(); updateMediaSession(); });
+  on('ended', () => { pod.played[ep.id] = 1; delete pod.pos[ep.id]; podSave(); podRelease(); podSet('stopped', 'Finished: ' + ep.title + '.'); });
+  on('error', () => {
+    const at = a.currentTime || startAt;
+    if (useEq && !heard) { pod.noEq.add(host); pod.eqFail = 'this podcast\'s host does not allow audio processing by web pages'; podConnect(at); return; }
+    podRelease(); podSet('failed', 'Could not play this episode. The browser does not say why: the host may be unavailable, use a format this browser cannot play, or block web players.');
+  });
+  a.defaultPlaybackRate = pod.rate; a.playbackRate = pod.rate;
+  a.src = ep.url;
+  podSet('loading', 'Loading “' + ep.title + '”…');
+  const pr = a.play();
+  if (pr && pr.catch) pr.catch((e) => { if (gen !== pod.gen) return; if (e && e.name === 'NotAllowedError') podSet('paused', 'The browser blocked playback until you press Play yourself.'); });
+}
+function podResume() {
+  if (!pod.ep) { playerMsg('Choose an episode in the Podcasts tab.'); return; }
+  state.mode = 'podcast'; ensureCtx(); if (E.ctx && E.ctx.state !== 'running') E.ctx.resume().catch(() => {});
+  if (pod.a && pod.state === 'paused') { const pr = pod.a.play(); if (pr && pr.catch) pr.catch(() => {}); return; }
+  podConnect(pod.played[pod.ep.id] ? 0 : pod.pos[pod.ep.id] || 0);
+}
+function podSkip(sec) {
+  const a = pod.a; if (!a) return;
+  const d = Number.isFinite(a.duration) ? a.duration : Infinity;
+  a.currentTime = Math.max(0, Math.min(d - 0.5, (a.currentTime || 0) + sec)); podSavePos(true); renderTime();
+}
+function setRate(r) { pod.rate = r; if (pod.a) { pod.a.playbackRate = r; pod.a.defaultPlaybackRate = r; } podSave(); renderPodStatus(); }
+function renderPodStatus() {
+  const t = $('podStatus'); if (!t) return;
+  const text = !pod.ep ? 'No episode playing.' : (pod.show ? pod.show.name + ': ' : '') + pod.ep.title + (pod.msg ? ' · ' + pod.msg : '');
+  if (t.textContent !== text) t.textContent = text;
+  t.className = 'status-text' + (pod.state === 'failed' ? ' bad' : pod.direct && podActive() ? ' warn' : '');
+  $('podCtl').hidden = !(state.mode === 'podcast' && pod.a);
+  $('podRate').textContent = 'Speed ' + String(pod.rate).replace('.', ',').replace(',', '.') + '×';
+}
+function showRow(show) {
+  const li = document.createElement('li');
+  const b = document.createElement('button'); b.type = 'button'; b.className = 'tname'; b.textContent = show.name; b.setAttribute('aria-label', 'Open ' + show.name);
+  const sm = document.createElement('small'); sm.textContent = [show.artist, show.genre, show.country === 'US' ? 'United States' : ''].filter(Boolean).join(' · '); b.append(sm);
+  b.addEventListener('click', () => openShow(show));
+  const f = document.createElement('button'); f.type = 'button'; f.className = 'iconbtn'; const on = isSub(show); f.textContent = on ? '★' : '☆'; f.setAttribute('aria-pressed', String(on)); f.setAttribute('aria-label', (on ? 'Unfollow ' : 'Follow ') + show.name);
+  f.addEventListener('click', () => toggleSub(show));
+  li.append(b, f); return li;
+}
+function renderPodResults() { const ol = $('podResults'); ol.textContent = ''; for (const s2 of pod.results) ol.append(showRow(s2)); }
+function renderEpisodes() {
+  const ol = $('podEpisodes'); ol.textContent = '';
+  for (const ep of pod.episodes) {
+    const li = document.createElement('li'), cur = state.mode === 'podcast' && pod.ep && pod.ep.id === ep.id; if (cur) li.className = 'current';
+    const played = !!pod.played[ep.id], pos = pod.pos[ep.id];
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'tname'; b.textContent = ep.title; b.setAttribute('aria-label', 'Play ' + ep.title + (played ? ', played' : ''));
+    const left = !played && pos && Number.isFinite(ep.dur) ? fmtMin(ep.dur - pos) + ' left' : '';
+    const sm = document.createElement('small'); sm.textContent = [fmtDate(ep.date), fmtMin(ep.dur), played ? 'Played' : left].filter(Boolean).join(' · '); b.append(sm);
+    b.addEventListener('click', () => playEpisode(ep, pod.open));
+    const mk = document.createElement('button'); mk.type = 'button'; mk.className = 'iconbtn'; mk.textContent = '✓'; mk.setAttribute('aria-pressed', String(played)); mk.setAttribute('aria-label', (played ? 'Mark as not played: ' : 'Mark as played: ') + ep.title);
+    if (played) mk.style.color = 'var(--good)';
+    mk.addEventListener('click', () => { if (pod.played[ep.id]) delete pod.played[ep.id]; else { pod.played[ep.id] = 1; delete pod.pos[ep.id]; } podSave(); renderEpisodes(); });
+    li.append(b, mk); ol.append(li);
+  }
+}
+function renderPod() {
+  $('podHome').hidden = pod.view !== 'home'; $('podShow').hidden = pod.view !== 'show';
+  $('podTop').textContent = 'Popular in ' + storeName(pod.store); $('podStore').value = pod.store;
+  const ol = $('podSubs'); ol.textContent = '';
+  if (!pod.subs.length) ol.append(emptyRow('You do not follow any podcasts yet. Search below and press ☆.'));
+  for (const s2 of pod.subs) ol.append(showRow(s2));
+  renderPodResults();
+  if (pod.open) {
+    $('podShowName').textContent = pod.open.name;
+    $('podShowMeta').textContent = [pod.open.artist, pod.open.genre].filter(Boolean).join(' · ');
+    const on = isSub(pod.open); $('podFollow').textContent = on ? 'Following ★' : 'Follow ☆'; $('podFollow').setAttribute('aria-pressed', String(on));
+  }
+  renderEpisodes(); renderPodStatus();
+}
+function initPod() {
+  podLoad();
+  for (const [c, n] of POD.STORES) { const o = document.createElement('option'); o.value = c; o.textContent = n; $('podStore').append(o); }
+  $('tabPod').addEventListener('click', () => showTab('pod'));
+  $('podForm').addEventListener('submit', (e) => { e.preventDefault(); podSearch(false); });
+  $('podTop').addEventListener('click', () => podSearch(true));
+  $('podStore').addEventListener('change', (e) => { pod.store = e.target.value; podSave(); renderPod(); });
+  $('podHomeBtn').addEventListener('click', () => { pod.view = 'home'; pod.token++; renderPod(); $('podTerm').focus(); });
+  $('podFollow').addEventListener('click', () => { if (pod.open) toggleSub(pod.open); });
+  $('podBack').addEventListener('click', () => podSkip(-15));
+  $('podFwd').addEventListener('click', () => podSkip(30));
+  $('podRate').addEventListener('click', () => setRate(POD_RATES[(POD_RATES.indexOf(pod.rate) + 1) % POD_RATES.length]));
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') podSavePos(true); });
+  window.addEventListener('pagehide', () => podSavePos(true));
+  renderPod();
 }
 
 /* ---------- demo material (synthesised here, original) ---------- */
@@ -2009,6 +2374,14 @@ async function selfTest() {
 
 /* ---------- rendering ---------- */
 function renderTime() {
+  if (state.mode === 'podcast' && pod.ep) {
+    const a = pod.a, d = a && Number.isFinite(a.duration) ? a.duration : pod.ep.dur, t = a ? a.currentTime || 0 : pod.pos[pod.ep.id] || 0, seek = $('seek');
+    $('tCur').textContent = fmtTime(t); $('tDur').textContent = Number.isFinite(d) ? fmtTime(d) : '0:00';
+    seek.disabled = !(a && Number.isFinite(a.duration) && a.duration > 0);
+    if (Number.isFinite(d) && d > 0 && document.activeElement !== seek) seek.value = String(Math.round((t / d) * 1000));
+    if (!seek.disabled) seek.setAttribute('aria-valuetext', fmtTime(t) + ' of ' + fmtTime(d));
+    return;
+  }
   if (state.mode === 'radio' && radio.station) { const on = radio.state === 'playing' || radio.state === 'buffering'; $('tCur').textContent = on ? fmtTime((Date.now() - radio.since) / 1000) : '0:00'; $('tDur').textContent = 'LIVE'; $('seek').disabled = true; return; }
   const d = el.duration, t = el.currentTime || 0;
   $('tCur').textContent = fmtTime(t); $('tDur').textContent = Number.isFinite(d) ? fmtTime(d) : '0:00';
@@ -2017,10 +2390,17 @@ function renderTime() {
   if (!seek.disabled) seek.setAttribute('aria-valuetext', fmtTime(t) + ' of ' + fmtTime(d));
 }
 function renderTransport() {
-  const t = current(), isRadio = state.mode === 'radio' && !!radio.station, playing = isRadio ? radio.active() : state.intent === 'play' && !el.paused;
+  const t = current(), isRadio = state.mode === 'radio' && !!radio.station, isPod = state.mode === 'podcast' && !!pod.ep, playing = isPod ? podActive() : isRadio ? radio.active() : state.intent === 'play' && !el.paused;
   $('lcdState').textContent = t && t.failed ? 'CANNOT PLAY' : state.intent === 'play' ? (el.paused || state.loading ? 'LOADING' : 'PLAYING') : state.intent === 'pause' && t ? 'PAUSED' : 'STOPPED';
   const tm = t && meta(t.trackId);
   $('lcdTitle').textContent = t ? label(tm) : 'No track loaded. Open files or load the demo.'; $('lcdSub').textContent = t ? sub(tm) : '';
+  if (isPod) {
+    $('lcdState').textContent = 'PODCAST · ' + ({ loading: 'LOADING', playing: 'PLAYING', buffering: 'BUFFERING', paused: 'PAUSED', stopped: 'STOPPED', failed: 'CANNOT PLAY' }[pod.state] || pod.state.toUpperCase());
+    $('lcdTitle').textContent = pod.ep.title; $('lcdSub').textContent = pod.show ? pod.show.name : '';
+    const img = $('cover'); if (pod.show && pod.show.artwork) { if (img.getAttribute('src') !== pod.show.artwork) { img.onerror = () => { img.hidden = true; }; img.src = pod.show.artwork; } img.hidden = false; } else img.hidden = true;
+  }
+  $('prevBtn').setAttribute('aria-label', isPod ? 'Back 15 seconds' : isRadio ? 'Previous station' : 'Previous track');
+  $('nextBtn').setAttribute('aria-label', isPod ? 'Forward 30 seconds' : isRadio ? 'Next station' : 'Next track');
   if (isRadio) { const st = radio.station; $('lcdState').textContent = 'RADIO · ' + radio.state.toUpperCase(); $('lcdTitle').textContent = st.name; $('lcdSub').textContent = stationMeta(st); $('cover').hidden = true; }
   $('playBtn').setAttribute('aria-label', playing ? 'Pause' : 'Play');
   $('playIcon').setAttribute('d', playing ? 'M6 4h4v16H6zM14 4h4v16h-4z' : 'M7 4v16l13-8z');
@@ -2104,6 +2484,7 @@ function renderFilters() {
   $('filterCount').textContent = state.eq.filters.length + ' of ' + D.LIMITS.maxFilters + ' filters';
 }
 function renderEq() {
+  renderSoundSummary();
   renderTone();
   const q = state.eq, h = headroom(), rate = fs();
   $('eqOn').checked = q.enabled;
@@ -2180,7 +2561,7 @@ $('shufBtn').addEventListener('click', () => { state.shuffle = !state.shuffle; m
 $('repBtn').addEventListener('click', () => { state.repeat = { off: 'all', all: 'one', one: 'off' }[state.repeat]; renderTransport(); saveSettings(); });
 $('muteBtn').addEventListener('click', () => { state.muted = !state.muted; applyVolume(); renderTransport(); saveSettings(); });
 $('vol').addEventListener('input', (e) => { state.volume = Number(e.target.value) / 100; $('volPct').textContent = e.target.value + '%'; applyVolume(); saveSettings(); });
-$('seek').addEventListener('input', (e) => { if (Number.isFinite(el.duration)) el.currentTime = (Number(e.target.value) / 1000) * el.duration; });
+$('seek').addEventListener('input', (e) => { const m = curMedia(); if (m && Number.isFinite(m.duration)) m.currentTime = (Number(e.target.value) / 1000) * m.duration; });
 $('seek').addEventListener('change', (e) => e.target.blur());
 $('presetSel').addEventListener('change', (e) => { if (e.target.value !== 'custom') { loadBuiltin(e.target.value); state.eq.preampMode = 'auto'; renderPresetSel(); renderFilters(); eqChanged(); } });
 $('eqOn').addEventListener('change', (e) => { state.eq.enabled = e.target.checked; eqChanged(); });
@@ -2218,6 +2599,7 @@ $('quietBtn').addEventListener('click', quieterTest);
 $('measureBtn').addEventListener('click', measureLive);
 $('selfTestBtn').addEventListener('click', selfTest);
 $('eqDetails').addEventListener('toggle', () => { drawGraph(); saveSettings(); });
+$('soundFold').addEventListener('toggle', () => { if (soundFoldSync) return; soundOpenPref = $('soundFold').open; saveSettings(); if (soundOpenPref) drawGraph(); });
 window.addEventListener('resize', drawGraph);
 const drop = $('drop');
 for (const ev of ['dragenter', 'dragover']) document.addEventListener(ev, (e) => { if (e.dataTransfer && [...e.dataTransfer.types].includes('Files')) { e.preventDefault(); drop.classList.add('over'); } });
@@ -2227,7 +2609,7 @@ document.addEventListener('keydown', (e) => {
   const tg = e.target, tag = tg && tg.tagName;
   if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || tag === 'BUTTON' || tag === 'SUMMARY' || tag === 'A' || (tg && tg.isContentEditable)) return;
   if (e.code === 'Space') { e.preventDefault(); toggle(); }
-  else if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { if (Number.isFinite(el.duration)) { e.preventDefault(); el.currentTime = Math.max(0, Math.min(el.duration, el.currentTime + (e.key === 'ArrowRight' ? 5 : -5))); } }
+  else if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { const m = curMedia(); if (m && Number.isFinite(m.duration)) { e.preventDefault(); m.currentTime = Math.max(0, Math.min(m.duration, m.currentTime + (e.key === 'ArrowRight' ? 5 : -5))); } }
   else if (e.key === 'm' || e.key === 'M') $('muteBtn').click();
   else if (e.key === 'o' || e.key === 'O') $('fileInput').click();
 });
@@ -2246,7 +2628,7 @@ twoStep($('plDelete'), 'Delete this playlist?', deletePlaylist);
 $('editForm').addEventListener('submit', (e) => { e.preventDefault(); saveEdit(); });
 $('edCancel').addEventListener('click', closeEdit);
 
-$('eqJump').addEventListener('click', () => { setCompact(false); const d = $('eqDetails'); d.open = true; d.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' }); drawGraph(); saveSettings(); });
+$('eqJump').addEventListener('click', () => { setCompact(false); const d = $('eqDetails'); openSoundFold(); d.open = true; d.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' }); drawGraph(); saveSettings(); });
 
 /* ---------- tone faders, compact view, finishes ---------- */
 function renderTone() {
@@ -2278,6 +2660,10 @@ function renderTone() {
 const car = { open: false, src: 'radio', wake: null, lastFocus: null, plId: '' };
 function carIsRadio() { return car.src === 'radio'; }
 function carStateText() {
+  if (state.mode === 'podcast' && pod.ep) {
+    const t = { loading: 'Loading…', playing: 'Playing', buffering: 'Buffering…', paused: 'Paused', stopped: 'Stopped', failed: 'Could not play · press Play to try again' }[pod.state] || '';
+    return 'Podcast · ' + t + (pod.direct && podActive() ? ' · without EQ' : '');
+  }
   if (state.mode === 'radio' && radio.station) {
     const t = { playing: 'Playing', buffering: 'Buffering…', connecting: 'Connecting…', recovering: 'Reconnecting…', paused: 'Paused', failed: 'Could not play · press Play to try again', stopped: 'Stopped' }[radio.state] || '';
     return 'Radio · ' + t + (radio.direct && radio.active() ? ' · without EQ' : '');
@@ -2293,15 +2679,16 @@ function carTile(text, sub, active, onTap) {
 }
 function renderCar() {
   if (!car.open) return;
-  const isRadioNow = state.mode === 'radio' && !!radio.station, q = current(), m = q && meta(q.trackId);
+  const isRadioNow = state.mode === 'radio' && !!radio.station, isPodNow = state.mode === 'podcast' && !!pod.ep, q = !isPodNow && current(), m = q && meta(q.trackId);
   $('carState').textContent = carStateText();
-  $('carTitle').textContent = isRadioNow ? radio.station.name : q ? label(m) : carIsRadio() ? 'Choose a station' : 'Choose a playlist';
-  $('carSub').textContent = isRadioNow ? [radio.station.country, radio.station.codec].filter(Boolean).join(' · ') : q ? sub(m) : '';
-  const playing = isRadioNow ? radio.active() : state.intent === 'play' && !el.paused;
+  $('carTitle').textContent = isPodNow ? pod.ep.title : isRadioNow ? radio.station.name : q ? label(m) : carIsRadio() ? 'Choose a station' : 'Choose a playlist';
+  $('carSub').textContent = isPodNow ? (pod.show ? pod.show.name : '') : isRadioNow ? [radio.station.country, radio.station.codec].filter(Boolean).join(' · ') : q ? sub(m) : '';
+  const playing = isPodNow ? podActive() : isRadioNow ? radio.active() : state.intent === 'play' && !el.paused;
   $('carPlay').setAttribute('aria-label', playing ? 'Pause' : 'Play');
   $('carPlayIcon').setAttribute('d', playing ? 'M6 4h4v16H6zM14 4h4v16h-4z' : 'M7 4v16l13-8z');
   const stepWord = state.mode === 'radio' || (!q && carIsRadio()) ? 'station' : 'track';
-  $('carPrev').setAttribute('aria-label', 'Previous ' + stepWord); $('carNext').setAttribute('aria-label', 'Next ' + stepWord);
+  if (isPodNow) { $('carPrev').setAttribute('aria-label', 'Back 15 seconds'); $('carNext').setAttribute('aria-label', 'Forward 30 seconds'); }
+  else { $('carPrev').setAttribute('aria-label', 'Previous ' + stepWord); $('carNext').setAttribute('aria-label', 'Next ' + stepWord); }
   $('carSrcRadio').setAttribute('aria-pressed', String(carIsRadio())); $('carSrcMusic').setAttribute('aria-pressed', String(!carIsRadio()));
   const box = $('carTiles'), keep = document.activeElement && box.contains(document.activeElement) ? [...box.children].indexOf(document.activeElement) : -1;
   box.textContent = '';
@@ -2338,12 +2725,14 @@ function closeCar() {
   const f = car.lastFocus && document.contains(car.lastFocus) ? car.lastFocus : $('carBtn'); f.focus();
 }
 function carToggle() {
+  if (state.mode === 'podcast' && pod.ep) return toggle();
   if (state.mode === 'radio' && radio.station) return toggle();
   if (state.queue.length && (!carIsRadio() || state.mode === 'local' && current())) return toggle();
   if (carIsRadio()) { if (radio.original) return startRadio(radio.original); if (rui.favs.length) return startRadio(rui.favs[0]); return playerMsg('Add favourite stations in the Radio tab first.'); }
   toggle();
 }
 function carStep(dir) {
+  if (state.mode === 'podcast' && pod.ep) return podSkip(dir > 0 ? 30 : -15);
   if (state.mode === 'radio' || (carIsRadio() && !(state.mode === 'local' && current() && state.intent === 'play'))) { if (state.mode !== 'radio' && !rui.favs.length) return playerMsg('Add favourite stations in the Radio tab first.'); return radioStep(dir); }
   dir > 0 ? next(false) : prev();
 }
@@ -2390,27 +2779,31 @@ function initLook() {
 let msKey = null;
 function updateMediaSession() {
   const ms = navigator.mediaSession; if (!ms || !window.MediaMetadata) return;
-  const isRadio = state.mode === 'radio' && !!radio.station, q = current(), m = q && meta(q.trackId);
-  const key = isRadio ? 'r:' + radio.station.url : m ? 't:' + m.id + ':' + label(m) + ':' + (m.artist || '') + ':' + (m.album || '') + ':' + (coverUrl || '') : '';
+  const isRadio = state.mode === 'radio' && !!radio.station, isPod = state.mode === 'podcast' && !!pod.ep, q = current(), m = !isRadio && !isPod && q && meta(q.trackId);
+  const key = isPod ? 'p:' + pod.ep.id : isRadio ? 'r:' + radio.station.url : m ? 't:' + m.id + ':' + label(m) + ':' + (m.artist || '') + ':' + (m.album || '') + ':' + (coverUrl || '') : '';
   if (key !== msKey) {
     msKey = key;
-    try { ms.metadata = !key ? null : new MediaMetadata(isRadio ? { title: radio.station.name, artist: 'Internet radio', album: 'RIKU' } : { title: label(m), artist: m.artist || '', album: m.album || '', artwork: coverUrl ? [{ src: coverUrl }] : [] }); } catch (e) {}
+    const md = !key ? null : isPod ? { title: pod.ep.title, artist: pod.show ? pod.show.name : 'Podcast', album: 'Podcast', artwork: pod.show && pod.show.artwork ? [{ src: pod.show.artwork }] : [] }
+      : isRadio ? { title: radio.station.name, artist: 'Internet radio', album: 'RIKU' } : { title: label(m), artist: m.artist || '', album: m.album || '', artwork: coverUrl ? [{ src: coverUrl }] : [] };
+    try { ms.metadata = md ? new MediaMetadata(md) : null; } catch (e) {}
     const set = (a, f) => { try { ms.setActionHandler(a, f); } catch (e) {} };
-    set('previoustrack', () => prev());   // in radio mode: previous favourite station
-    set('nexttrack', () => next(false));    // in radio mode: next favourite station
-    set('seekto', isRadio ? null : (d) => { if (Number.isFinite(d.seekTime) && Number.isFinite(el.duration)) el.currentTime = Math.max(0, Math.min(el.duration, d.seekTime)); });
-    set('seekbackward', isRadio ? null : (d) => { el.currentTime = Math.max(0, el.currentTime - (d.seekOffset || 10)); });
-    set('seekforward', isRadio ? null : (d) => { if (Number.isFinite(el.duration)) el.currentTime = Math.min(el.duration, el.currentTime + (d.seekOffset || 10)); });
+    set('previoustrack', () => prev());   // radio: previous favourite station; podcast: back 15 s
+    set('nexttrack', () => next(false));    // radio: next favourite station; podcast: forward 30 s
+    const seekable = !isRadio;
+    set('seekto', seekable ? (d) => { const x = curMedia(); if (x && Number.isFinite(d.seekTime) && Number.isFinite(x.duration)) x.currentTime = Math.max(0, Math.min(x.duration, d.seekTime)); } : null);
+    set('seekbackward', seekable ? (d) => { const x = curMedia(); if (x) x.currentTime = Math.max(0, x.currentTime - (d.seekOffset || (isPod ? 15 : 10))); } : null);
+    set('seekforward', seekable ? (d) => { const x = curMedia(); if (x && Number.isFinite(x.duration)) x.currentTime = Math.min(x.duration, x.currentTime + (d.seekOffset || (isPod ? 30 : 10))); } : null);
   }
-  const playing = isRadio ? radio.active() : state.intent === 'play' && !el.paused;
+  const playing = isPod ? podActive() : isRadio ? radio.active() : state.intent === 'play' && !el.paused;
   try { ms.playbackState = !key ? 'none' : playing ? 'playing' : 'paused'; } catch (e) {}
-  if (!isRadio && m && Number.isFinite(el.duration) && el.duration > 0 && ms.setPositionState) { try { ms.setPositionState({ duration: el.duration, playbackRate: 1, position: Math.min(el.currentTime || 0, el.duration) }); } catch (e) {} }
+  const x = isRadio ? null : isPod ? pod.a : (m ? el : null);
+  if (x && Number.isFinite(x.duration) && x.duration > 0 && ms.setPositionState) { try { ms.setPositionState({ duration: x.duration, playbackRate: x.playbackRate || 1, position: Math.min(x.currentTime || 0, x.duration) }); } catch (e) {} }
 }
 function initMediaSession() {
   const ms = navigator.mediaSession; if (!ms) return;
   const set = (a, f) => { try { ms.setActionHandler(a, f); } catch (e) {} };
   set('play', () => play());
-  set('pause', () => { if (state.mode === 'radio' && radio.station) { radio.pause(); renderAll(); } else pause(); });
+  set('pause', () => { if (state.mode === 'radio' && radio.station) { radio.pause(); renderAll(); } else pause(); });   // pause() also covers podcasts
   set('stop', () => stop());
 }
 
@@ -2440,7 +2833,17 @@ function loadProfiles() {
 }
 function saveProfiles() { try { localStorage.setItem(PROF_KEY, JSON.stringify({ v: 1, selected: prof.selected, items: prof.items })); return true; } catch (e) { $('profMsg').textContent = 'Profiles could not be saved in this browser; they last until the page is closed.'; return false; } }
 function selectedProfile() { return prof.items.find((x) => x.id === prof.selected) || null; }
+/* One-line summary shown on the folded sound section: profile or headphones, EQ state, tone. */
+function renderSoundSummary() {
+  const el2 = $('sfSum'); if (!el2) return;
+  const p = typeof selectedProfile === 'function' ? selectedProfile() : null, q = state.eq;
+  const parts = [p ? p.name : (q.presetId === 'custom' ? q.name : (BUILTIN[q.presetId] ? BUILTIN[q.presetId].name : q.name))];
+  if (!q.enabled) parts.push('EQ off'); else if (q.tone.some((v) => v)) parts.push('tone adjusted');
+  el2.textContent = parts.filter(Boolean).join(' · ');
+}
+function openSoundFold() { const f = $('soundFold'); if (!f.open) { f.open = true; } }
 function profStateUpdate() {
+  renderSoundSummary();
   const p = selectedProfile(), el2 = $('profState'); if (!el2) return;
   el2.textContent = !p ? '' : snapKey(eqSnapshot()) === snapKey(p.eq) ? 'Saved' : 'Changed since saved';
   for (const id of ['profUpdate', 'profRename', 'profDelete']) $(id).disabled = !p;
@@ -2498,10 +2901,10 @@ loadSettings();
 renderPresetSel(); renderFilters(); renderEq(); renderAll(); renderPlaylists();
 requestAnimationFrame(drawSpectrum);
 if (document.fonts && document.fonts.ready) document.fonts.ready.then(drawGraph);
-initLook(); initCar(); initMediaSession(); initProfiles();
-initRadio();
+applySoundFold(); initLook(); initCar(); initMediaSession(); initProfiles();
+initRadio(); initPod();
 const ready = startLibrary();
-window.__riku = { car: car, openCar: openCar, closeCar: closeCar, radioStep: radioStep, TONE: TONE, setCompact: setCompact, setFinish: setFinish, prof: prof, eqSnapshot: eqSnapshot, get radio() { return radio; }, rui: rui, startRadio: startRadio, radioSearch: radioSearch, BUILTIN: BUILTIN, ready: ready, lib: lib, ui: ui, L: L, importFiles: importFiles, isImporting: () => importing, libReady: () => libReady, state: state, E: E, el: el, D: D, play: play, stop: stop, next: next, loadDemo: loadDemo, measureLive: measureLive, selfTest: selfTest, rebuildEq: rebuildEq, routing: routing, headroom: headroom, loadBuiltin: (id) => { loadBuiltin(id); renderPresetSel(); renderFilters(); eqChanged(); }, applyImport: applyImport };
+window.__riku = { pod: pod, playEpisode: playEpisode, openShow: openShow, podSkip: podSkip, applySoundFold: applySoundFold, car: car, openCar: openCar, closeCar: closeCar, radioStep: radioStep, TONE: TONE, setCompact: setCompact, setFinish: setFinish, prof: prof, eqSnapshot: eqSnapshot, get radio() { return radio; }, rui: rui, startRadio: startRadio, radioSearch: radioSearch, BUILTIN: BUILTIN, ready: ready, lib: lib, ui: ui, L: L, importFiles: importFiles, isImporting: () => importing, libReady: () => libReady, state: state, E: E, el: el, D: D, play: play, stop: stop, next: next, loadDemo: loadDemo, measureLive: measureLive, selfTest: selfTest, rebuildEq: rebuildEq, routing: routing, headroom: headroom, loadBuiltin: (id) => { loadBuiltin(id); renderPresetSel(); renderFilters(); eqChanged(); }, applyImport: applyImport };
 })();
 </script>
 </body>
