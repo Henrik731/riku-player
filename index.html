@@ -4,6 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>RIKU Player</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0b152b">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-title" content="RIKU">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Saira+Semi+Condensed:wght@400;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
 <style>
@@ -326,6 +333,12 @@ body.car-open { overflow: hidden; }
 body[data-finish="graphite"] .soundfold > summary { background: linear-gradient(180deg, #59616d, #3c424b); border-color: #1b1f25; box-shadow: inset 0 1px 0 rgba(255,255,255,.25), 0 2px 0 #22262c, 0 4px 6px rgba(0,0,0,.35); }
 body[data-finish="graphite"] .soundfold > summary, body[data-finish="graphite"] .sf-title, body[data-finish="graphite"] .sf-sum, body[data-finish="graphite"] .soundfold > summary::before { color: #e8edf4; }
 body[data-finish="champagne"] .soundfold > summary { background: linear-gradient(180deg, #fbf6ec, #e6dbc5); border-color: #b0a184; }
+
+/* ---------- update notice ---------- */
+.updatebar { position: fixed; left: 50%; bottom: max(16px, env(safe-area-inset-bottom)); transform: translateX(-50%); z-index: 60; display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
+  max-width: calc(100vw - 32px); padding: 10px 14px; border-radius: 14px; background: #eef4ff; color: #0b1d45; border: 1px solid #9fb2d1; box-shadow: 0 10px 30px rgba(0,0,0,.45); font-size: 15px; }
+.updatebar[hidden] { display: none; }
+.versionline { font-family: var(--font-lcd); }
 </style>
 </head>
 <body>
@@ -604,6 +617,7 @@ body[data-finish="champagne"] .soundfold > summary { background: linear-gradient
     </div>
     <div class="drop" id="drop">Drop audio files here, or use Open files. Files are copied into this browser's storage on this device and are not uploaded.</div>
     <p class="note">Which formats play depends on this browser's decoders. Keys: Space play/pause · ←/→ seek 5 s · M mute · O open files.</p>
+    <p class="note versionline" id="versionLine"></p>
   </section>
 </main>
 <dialog id="editDlg" aria-labelledby="editTitle">
@@ -646,6 +660,11 @@ body[data-finish="champagne"] .soundfold > summary { background: linear-gradient
   </div>
   <div class="car-tiles" id="carTiles"></div>
   <p class="car-note" id="carNote"></p>
+</div>
+<div class="updatebar" id="updateBar" role="status" hidden>
+  <span>A newer version of RIKU has been downloaded.</span>
+  <button class="btn small" id="updateReload" type="button">Reload now</button>
+  <button class="btn small" id="updateLater" type="button">Later</button>
 </div>
 <div class="sr" id="live" aria-live="polite"></div>
 
@@ -2959,6 +2978,22 @@ function initProfiles() {
   renderProfiles();
 }
 
+/* ---------- installable app: version, offline support, update notice ---------- */
+const RIKU_VERSION = '2026.11.27-1558';
+function initApp() {
+  const standalone = (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
+  $('versionLine').textContent = 'RIKU Player · version ' + RIKU_VERSION + (standalone ? ' · installed' : '');
+  $('updateReload').addEventListener('click', () => location.reload());
+  $('updateLater').addEventListener('click', () => { $('updateBar').hidden = true; });
+  if (!('serviceWorker' in navigator) || !/^https?:$/.test(location.protocol)) return;
+  navigator.serviceWorker.addEventListener('message', (e) => {
+    if (e.data && e.data.type === 'riku-updated') { $('updateBar').hidden = false; announce('A newer version of RIKU has been downloaded. Reload when convenient.'); }
+  });
+  navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then((reg) => {
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') reg.update().catch(() => {}); });
+  }).catch(() => { /* not available here (for example a sandboxed preview); the player works without it */ });
+}
+
 async function startLibrary() {
   try {
     await L.open(); libReady = true;
@@ -2980,9 +3015,9 @@ renderPresetSel(); renderFilters(); renderEq(); renderAll(); renderPlaylists();
 requestAnimationFrame(drawSpectrum);
 if (document.fonts && document.fonts.ready) document.fonts.ready.then(drawGraph);
 applySoundFold(); initLook(); initCar(); initMediaSession(); initProfiles();
-initRadio(); initPod();
+initRadio(); initPod(); initApp();
 const ready = startLibrary();
-window.__riku = { podBrowse: podBrowse, pod: pod, playEpisode: playEpisode, openShow: openShow, podSkip: podSkip, applySoundFold: applySoundFold, car: car, openCar: openCar, closeCar: closeCar, radioStep: radioStep, TONE: TONE, setCompact: setCompact, setFinish: setFinish, prof: prof, eqSnapshot: eqSnapshot, get radio() { return radio; }, rui: rui, startRadio: startRadio, radioSearch: radioSearch, BUILTIN: BUILTIN, ready: ready, lib: lib, ui: ui, L: L, importFiles: importFiles, isImporting: () => importing, libReady: () => libReady, state: state, E: E, el: el, D: D, play: play, stop: stop, next: next, loadDemo: loadDemo, measureLive: measureLive, selfTest: selfTest, rebuildEq: rebuildEq, routing: routing, headroom: headroom, loadBuiltin: (id) => { loadBuiltin(id); renderPresetSel(); renderFilters(); eqChanged(); }, applyImport: applyImport };
+window.__riku = { version: RIKU_VERSION, podBrowse: podBrowse, pod: pod, playEpisode: playEpisode, openShow: openShow, podSkip: podSkip, applySoundFold: applySoundFold, car: car, openCar: openCar, closeCar: closeCar, radioStep: radioStep, TONE: TONE, setCompact: setCompact, setFinish: setFinish, prof: prof, eqSnapshot: eqSnapshot, get radio() { return radio; }, rui: rui, startRadio: startRadio, radioSearch: radioSearch, BUILTIN: BUILTIN, ready: ready, lib: lib, ui: ui, L: L, importFiles: importFiles, isImporting: () => importing, libReady: () => libReady, state: state, E: E, el: el, D: D, play: play, stop: stop, next: next, loadDemo: loadDemo, measureLive: measureLive, selfTest: selfTest, rebuildEq: rebuildEq, routing: routing, headroom: headroom, loadBuiltin: (id) => { loadBuiltin(id); renderPresetSel(); renderFilters(); eqChanged(); }, applyImport: applyImport };
 })();
 </script>
 </body>
