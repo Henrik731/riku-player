@@ -111,6 +111,8 @@ input[type=checkbox], input[type=radio] { width: 22px; height: 22px; accent-colo
 dialog { background: var(--navy-2); color: var(--text); border: 1px solid #36507e; border-radius: 8px; padding: 16px; width: min(460px, calc(100vw - 32px)); }
 dialog::backdrop { background: rgba(2, 6, 16, .7); }
 dialog input[type=number] { width: 84px; }
+.podtopics { gap: 6px; }
+#sidePanel .podtopics .btn[aria-pressed="true"] { background: linear-gradient(180deg, #e3e9f1, #c9d2de); color: #10203e; border-color: #e3e9f1; }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .stack { display: grid; gap: 10px; grid-template-columns: minmax(0, 1fr); }
 input[type=text] { flex: 1 1 160px; min-width: 0; }
@@ -584,8 +586,9 @@ body[data-finish="champagne"] .soundfold > summary { background: linear-gradient
             <label class="sr" for="podTerm">Podcast name or topic</label><input type="text" id="podTerm" maxlength="80" placeholder="Name or topic, e.g. historia">
             <label class="sr" for="podStore">Directory country</label><select id="podStore"></select>
           </div>
-          <div class="row"><button class="btn small" type="submit" id="podSearch">Search</button><button class="btn small" type="button" id="podTop">Popular in Finland</button></div>
+          <div class="row"><button class="btn small" type="submit" id="podSearch">Search</button></div>
         </form>
+        <div class="row podtopics" id="podTopics" role="group" aria-label="Browse by topic"></div>
         <p class="note" id="podSearchStatus" role="status">Search Apple's podcast directory. Most Finnish podcasts, including Yle's, are listed there.</p>
         <ol id="podResults"></ol>
       </div>
@@ -1274,6 +1277,19 @@ b){(new g(a)).read(b)},Reader:g,Config:q}},{"./ArrayFileReader":3,"./BlobFileRea
   'use strict';
   const STORES = Object.freeze([['FI', 'Finland'], ['US', 'United States']]);
   const BASE = 'https://itunes.apple.com';
+  /* Browse topics. genre = Apple's podcast genre number (26 = all podcasts); fi/us = the search word used when a chart cannot be loaded. */
+  const TOPICS = Object.freeze([
+    { id: 'all', label: 'Popular', genre: 26, fi: '', us: '' },
+    { id: 'news', label: 'News', genre: 1489, fi: 'uutiset', us: 'news' },
+    { id: 'history', label: 'History', genre: 1487, fi: 'historia', us: 'history' },
+    { id: 'society', label: 'Society', genre: 1324, fi: 'yhteiskunta', us: 'society culture' },
+    { id: 'comedy', label: 'Comedy', genre: 1303, fi: 'huumori', us: 'comedy' },
+    { id: 'sport', label: 'Sport', genre: 1545, fi: 'urheilu', us: 'sports' },
+    { id: 'crime', label: 'True crime', genre: 1488, fi: 'rikos', us: 'true crime' },
+    { id: 'science', label: 'Science', genre: 1533, fi: 'tiede', us: 'science' },
+    { id: 'business', label: 'Business', genre: 1321, fi: 'talous', us: 'business' },
+    { id: 'health', label: 'Health', genre: 1512, fi: 'terveys', us: 'health' },
+  ]);
 
   function text(v, n) { return String(v == null ? '' : v).replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, n); }
   function searchPath(term, country, limit) {
@@ -1284,6 +1300,8 @@ b){(new g(a)).read(b)},Reader:g,Config:q}},{"./ArrayFileReader":3,"./BlobFileRea
     const p = new URLSearchParams({ id: String(id), media: 'podcast', entity: 'podcastEpisode', country: country, limit: String(limit || 100), sort: 'recent' });
     return '/lookup?' + p.toString();
   }
+  /* Apple's older chart feed, which can be filtered by genre. */
+  function genreChartUrl(country, genre, n) { return BASE + '/' + String(country).toLowerCase() + '/rss/toppodcasts/limit=' + (n || 50) + '/genre=' + Number(genre) + '/json'; }
   function chartUrl(country, n) { return 'https://rss.applemarketingtools.com/api/v2/' + String(country).toLowerCase() + '/podcasts/top/' + (n || 50) + '/podcasts.json'; }
   /* An address that can be played: https, or http upgraded to https when the page is https. Never credentials. */
   function audioUrl(u, upgrade) {
@@ -1353,7 +1371,17 @@ b){(new g(a)).read(b)},Reader:g,Config:q}},{"./ArrayFileReader":3,"./BlobFileRea
     const r = json && json.feed && Array.isArray(json.feed.results) ? json.feed.results : [];
     return normShows(r.map((x) => ({ collectionId: x.id, collectionName: x.name, artistName: x.artistName, artworkUrl100: x.artworkUrl100, genres: x.genres })), country);
   }
-  return { STORES, BASE, text, searchPath, episodesPath, chartUrl, audioUrl, safeImg, normShow, normShows, normEpisodes, rssEpisodes, normChart, parseDuration };
+  /* Older chart feed: { feed: { entry: [{ id: { attributes: { 'im:id' } }, 'im:name': { label }, 'im:artist': { label }, 'im:image': [{ label }], category: { attributes: { label } } }] } } */
+  function normGenreChart(json, country) {
+    let e = json && json.feed && json.feed.entry; if (e && !Array.isArray(e)) e = [e];
+    return normShows((e || []).map((x) => {
+      const img = Array.isArray(x && x['im:image']) ? x['im:image'] : [];
+      return { collectionId: x && x.id && x.id.attributes && x.id.attributes['im:id'], collectionName: x && x['im:name'] && x['im:name'].label, artistName: x && x['im:artist'] && x['im:artist'].label,
+        artworkUrl100: img.length ? img[img.length - 1].label : '', primaryGenreName: x && x.category && x.category.attributes && x.category.attributes.label };
+    }), country);
+  }
+  function topicTerm(topic, country) { return country === 'US' ? topic.us : topic.fi; }
+  return { STORES, TOPICS, BASE, genreChartUrl, normGenreChart, topicTerm, text, searchPath, episodesPath, chartUrl, audioUrl, safeImg, normShow, normShows, normEpisodes, rssEpisodes, normChart, parseDuration };
 });
 
 </script>
@@ -1891,7 +1919,7 @@ function showTab(t) {
   for (const [k, pane, tab] of [['queue', 'paneQueue', 'tabQueue'], ['lib', 'paneLib', 'tabLib'], ['radio', 'paneRadio', 'tabRadio'], ['pod', 'panePod', 'tabPod']]) { $(pane).hidden = t !== k; $(tab).setAttribute('aria-selected', String(t === k)); }
   if (t === 'lib') { renderLibrary(); renderStorage(); }
   if (t === 'radio') renderRadio();
-  if (t === 'pod') renderPod();
+  if (t === 'pod') { renderPod(); if (!pod.autoLoaded && !pod.results.length) { pod.autoLoaded = true; podBrowse('all'); } }
 }
 
 /* ---------- radio ---------- */
@@ -2038,7 +2066,7 @@ function initRadio() {
 /* ---------- podcasts ---------- */
 const POD = window.RikuPod, POD_KEY = 'riku.podcasts.v1', POD_RATES = [1, 1.25, 1.5];
 const pod = { a: null, detach: null, ep: null, show: null, direct: false, eqFail: '', state: 'stopped', msg: '', gen: 0, noEq: new Set(), lastSave: 0,
-  store: 'FI', subs: [], pos: {}, played: {}, rate: 1, view: 'home', open: null, episodes: [], results: [], token: 0, searchToken: 0 };
+  store: 'FI', topic: '', autoLoaded: false, subs: [], pos: {}, played: {}, rate: 1, view: 'home', open: null, episodes: [], results: [], token: 0, searchToken: 0 };
 const upgradeHttp = location.protocol === 'https:';
 function podActive() { return pod.state === 'playing' || pod.state === 'buffering' || pod.state === 'loading'; }
 function podLoad() {
@@ -2083,7 +2111,27 @@ function toggleSub(show) {
   else { if (pod.subs.length >= 100) { $('podSearchStatus').textContent = 'You follow 100 podcasts, the limit. Unfollow one first.'; return; } pod.subs.push({ id: show.id, name: show.name, artist: show.artist, artwork: show.artwork, feedUrl: show.feedUrl, genre: show.genre, country: show.country }); }
   podSave(); renderPod(); announce(isSub(show) ? 'Following ' + show.name + '.' : 'No longer following ' + show.name + '.');
 }
+/* Browse a topic: Apple's chart for the chosen country first; if the browser cannot load it, a directory search
+   with a local keyword for the topic (Finnish words in the Finland directory), which goes the same way as a normal search. */
+async function podBrowse(topicId) {
+  const topic = POD.TOPICS.find((t) => t.id === topicId) || POD.TOPICS[0], token = ++pod.searchToken, st = $('podSearchStatus'), where = storeName(pod.store);
+  pod.topic = topic.id; pod.results = []; renderPod();
+  const what = topic.id === 'all' ? 'podcasts' : topic.label.toLowerCase() + ' podcasts';
+  st.textContent = 'Loading the most popular ' + what + ' in ' + where + '…';
+  let list = [], via = 'chart', err = '';
+  if (topic.id === 'all') { try { list = POD.normChart(await fetchJson(POD.chartUrl(pod.store, 50)), pod.store); } catch (e) { err = (e && e.message) || ''; } }
+  if (!list.length) { try { list = POD.normGenreChart(await fetchJson(POD.genreChartUrl(pod.store, topic.genre, 50)), pod.store); } catch (e) { err = (e && e.message) || err; } }
+  const term = POD.topicTerm(topic, pod.store);
+  if (!list.length && term) { via = 'search'; try { list = POD.normShows((await apple(POD.searchPath(term, pod.store, 40))).results, pod.store); } catch (e) { err = (e && e.message) || err; } }
+  if (token !== pod.searchToken) return;
+  pod.results = list;
+  st.textContent = !list.length ? (topic.id === 'all' ? 'The popular list could not be loaded here' + (err ? ' (' + err + ')' : '') + '. Choose a topic above, or search by name.' : 'Nothing could be loaded for this topic' + (err ? ' (' + err + ')' : '') + '. Try another topic, or search by name.')
+    : via === 'chart' ? 'The ' + list.length + ' most popular ' + what + ' in Apple\'s ' + where + ' chart. Tap one to see its episodes.'
+    : list.length + ' podcasts found for “' + term + '” in the ' + where + ' directory. Apple\'s chart could not be loaded here, so this is a search instead.';
+  renderPod();
+}
 async function podSearch(top) {
+  pod.topic = '';
   const token = ++pod.searchToken, st = $('podSearchStatus'), term = $('podTerm').value.trim();
   if (!top && !term) { st.textContent = 'Type a podcast name or a topic first.'; return; }
   st.textContent = top ? 'Loading the most popular podcasts in ' + storeName(pod.store) + '…' : 'Searching…'; pod.results = []; renderPodResults();
@@ -2218,9 +2266,10 @@ function renderEpisodes() {
 }
 function renderPod() {
   $('podHome').hidden = pod.view !== 'home'; $('podShow').hidden = pod.view !== 'show';
-  $('podTop').textContent = 'Popular in ' + storeName(pod.store); $('podStore').value = pod.store;
+  $('podStore').value = pod.store;
+  for (const b of document.querySelectorAll('#podTopics button')) b.setAttribute('aria-pressed', String(b.dataset.topic === pod.topic));
   const ol = $('podSubs'); ol.textContent = '';
-  if (!pod.subs.length) ol.append(emptyRow('You do not follow any podcasts yet. Search below and press ☆.'));
+  if (!pod.subs.length) ol.append(emptyRow('You do not follow any podcasts yet. Pick a topic or search below, then press ☆ on a podcast.'));
   for (const s2 of pod.subs) ol.append(showRow(s2));
   renderPodResults();
   if (pod.open) {
@@ -2235,8 +2284,8 @@ function initPod() {
   for (const [c, n] of POD.STORES) { const o = document.createElement('option'); o.value = c; o.textContent = n; $('podStore').append(o); }
   $('tabPod').addEventListener('click', () => showTab('pod'));
   $('podForm').addEventListener('submit', (e) => { e.preventDefault(); podSearch(false); });
-  $('podTop').addEventListener('click', () => podSearch(true));
-  $('podStore').addEventListener('change', (e) => { pod.store = e.target.value; podSave(); renderPod(); });
+  for (const t of POD.TOPICS) { const b = document.createElement('button'); b.type = 'button'; b.className = 'btn small'; b.dataset.topic = t.id; b.textContent = t.label; b.setAttribute('aria-pressed', 'false'); b.addEventListener('click', () => podBrowse(t.id)); $('podTopics').append(b); }
+  $('podStore').addEventListener('change', (e) => { pod.store = e.target.value; podSave(); renderPod(); if (pod.topic) podBrowse(pod.topic); });
   $('podHomeBtn').addEventListener('click', () => { pod.view = 'home'; pod.token++; renderPod(); $('podTerm').focus(); });
   $('podFollow').addEventListener('click', () => { if (pod.open) toggleSub(pod.open); });
   $('podBack').addEventListener('click', () => podSkip(-15));
@@ -2904,7 +2953,7 @@ if (document.fonts && document.fonts.ready) document.fonts.ready.then(drawGraph)
 applySoundFold(); initLook(); initCar(); initMediaSession(); initProfiles();
 initRadio(); initPod();
 const ready = startLibrary();
-window.__riku = { pod: pod, playEpisode: playEpisode, openShow: openShow, podSkip: podSkip, applySoundFold: applySoundFold, car: car, openCar: openCar, closeCar: closeCar, radioStep: radioStep, TONE: TONE, setCompact: setCompact, setFinish: setFinish, prof: prof, eqSnapshot: eqSnapshot, get radio() { return radio; }, rui: rui, startRadio: startRadio, radioSearch: radioSearch, BUILTIN: BUILTIN, ready: ready, lib: lib, ui: ui, L: L, importFiles: importFiles, isImporting: () => importing, libReady: () => libReady, state: state, E: E, el: el, D: D, play: play, stop: stop, next: next, loadDemo: loadDemo, measureLive: measureLive, selfTest: selfTest, rebuildEq: rebuildEq, routing: routing, headroom: headroom, loadBuiltin: (id) => { loadBuiltin(id); renderPresetSel(); renderFilters(); eqChanged(); }, applyImport: applyImport };
+window.__riku = { podBrowse: podBrowse, pod: pod, playEpisode: playEpisode, openShow: openShow, podSkip: podSkip, applySoundFold: applySoundFold, car: car, openCar: openCar, closeCar: closeCar, radioStep: radioStep, TONE: TONE, setCompact: setCompact, setFinish: setFinish, prof: prof, eqSnapshot: eqSnapshot, get radio() { return radio; }, rui: rui, startRadio: startRadio, radioSearch: radioSearch, BUILTIN: BUILTIN, ready: ready, lib: lib, ui: ui, L: L, importFiles: importFiles, isImporting: () => importing, libReady: () => libReady, state: state, E: E, el: el, D: D, play: play, stop: stop, next: next, loadDemo: loadDemo, measureLive: measureLive, selfTest: selfTest, rebuildEq: rebuildEq, routing: routing, headroom: headroom, loadBuiltin: (id) => { loadBuiltin(id); renderPresetSel(); renderFilters(); eqChanged(); }, applyImport: applyImport };
 })();
 </script>
 </body>
